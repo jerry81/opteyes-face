@@ -1,8 +1,8 @@
 <template>
   <div id="app" class="flex justify-center align-center">
     <!-- <try-face-api /> -->
-    <!-- <try-three /> -->
-    <try-tensorflow-js />
+    <try-three />
+<!--     <try-tensorflow-js /> -->
   </div>
 </template>
 

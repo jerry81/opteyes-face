@@ -31,9 +31,10 @@ import * as faceLandmarksDetection from "@tensorflow-models/face-landmarks-detec
 import Stats from "stats.js";
 import "@tensorflow/tfjs-backend-webgl";
 import "@tensorflow/tfjs-backend-cpu";
+// import FileSaver from 'file-saver'
 
 import * as tfjsWasm from "@tensorflow/tfjs-backend-wasm";
-import { TRIANGULATION } from "@/utils/triangulation";
+// import { TRIANGULATION } from "@/utils/triangulation";
 tfjsWasm.setWasmPaths(
   // wasm = webassembly
   `https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@${tfjsWasm.version_wasm}/dist/`
@@ -90,7 +91,7 @@ const VIDEO_SIZE = 500;
 const mobile = isMobile();
 // Don't render the point cloud on mobile in order to maximize performance and
 // to avoid crowding limited screen space.
-const renderPointcloud = mobile === false;
+const renderPointcloud = mobile !== mobile;
 // mobile has no scatter plot
 
 const stats = new Stats(); // Stats.js, from mr. doob - performance monitor
@@ -167,6 +168,15 @@ async function setupCamera() {
     };
   });
 }
+/* 
+let saved = false
+function capturePredictions(prediction) {
+  if (!prediction[0] || saved) return
+
+  let asStr = JSON.stringify(prediction)
+  FileSaver.saveAs(new Blob([asStr],  {type: "text/plain;charset=utf-8"}), 'facePoints')
+  saved = true
+} */
 
 async function renderPrediction() {
   // the 2d canvas face mesh drawing "prediction" because it is predicting depth and predicting facial parts
@@ -193,33 +203,61 @@ async function renderPrediction() {
   ); // draws image onto canvas, arg 2-5 are clip start and w/h
 
   if (predictions.length > 0) {
+    ctx.strokeStyle = GREEN;
+    ctx.fillStyle = "rgba(0,0,255, .2)";
+    ctx.lineWidth = 0.5;
+    // capturePredictions(predictions)
     predictions.forEach(prediction => {
-      // populateOutput(Object.keys(prediction.annotations)) // bounding box, mesh, scaledMesh - normalized mesh, annotations
+      populateOutput(Object.keys(prediction.annotations)); // bounding box, mesh, scaledMesh - normalized mesh, annotations
+      // populateOutput(prediction.annotations.lipsUpperOuter);
       //annotations include leftEyeUpperm,
       // lipsUpperOuter, lipsUpperInner, lipsLowerInner
       // silhouette: dark shape and outline of someone orsomething against a brighter background
 
       const keypoints = prediction.scaledMesh; // scale applied
-      populateOutput(keypoints[0].length);
+      // populateOutput(keypoints[0].length);
       // prediction are 3d points
 
       if (state.triangulateMesh) {
         // flag from ui
-        ctx.strokeStyle = GREEN;
-        ctx.lineWidth = 0.5;
 
-        console.log("triangulation is ", TRIANGULATION.length);
-        for (let i = 0; i < TRIANGULATION.length / 3; i++) {
+        const upperLipsOuter = prediction?.annotations?.lipsUpperOuter;
+        const lipsUpperInner = prediction?.annotations?.lipsUpperInner.reverse();
+        const innerOffsetted = lipsUpperInner.map(point => {
+          point[1] += 3
+          return point
+        })
+       // let upperLip = upperLipsOuter.concat(lipsUpperInner);
+        let upperLip = upperLipsOuter.concat(innerOffsetted) 
+        upperLip.push(upperLipsOuter[0]);
+        ctx.beginPath()
+        ctx.moveTo(upperLip[0][0], upperLip[0][1]);
+        // console.log("triangulation is ", TRIANGULATION.length);
+        for (let i = 0; i < upperLip.length - 1; i++) {
+          //        for (let i = upperLipsOuter.length; i < upperLipsOuter.length + 2; i++) {
           // triangulation - a util that is an array of length 2640
-          const points = [
-            // blocks of 3 points
-            TRIANGULATION[i * 3],
-            TRIANGULATION[i * 3 + 1],
-            TRIANGULATION[i * 3 + 2]
-          ].map(index => keypoints[index]); // create an array of triangulations from keypoints
+          if (upperLip && upperLip[0]) {
+            let points2 = [upperLip[i], upperLip[i + 1]];
 
-          drawPath(ctx, points, true); // draw triangle
+            // region.moveTo(points2[0][0], points2[0][1]);
+            ctx.lineTo(points2[1][0], points2[1][1]);
+            //  ctx.stroke();
+            if (10000000 < points2.length) {
+              drawPath(ctx, points2, false);
+            } // draw triangle
+          }
         }
+        ctx.closePath();
+        ctx.fill();
+        // ctx.stroke()
+       // ctx.stroke();
+        /*          for (let i = 0; i < lipsUpperInner.length - 1; i++) {
+          // triangulation - a util that is an array of length 2640
+          if (lipsUpperInner && lipsUpperInner[0]) {
+            let points2 = [lipsUpperInner[i], lipsUpperInner[i+1]]
+            drawPath(ctx, points2, true); // draw triangle
+          }
+        } */
       } else {
         // triangulation option off
         ctx.fillStyle = GREEN;
@@ -235,7 +273,7 @@ async function renderPrediction() {
         }
       }
 
-      if (keypoints.length > NUM_KEYPOINTS) {
+      if (keypoints.length < NUM_KEYPOINTS) {
         ctx.strokeStyle = RED;
         ctx.lineWidth = 1;
 
@@ -310,7 +348,7 @@ async function renderPrediction() {
           }
           return BLUE;
         });
-        scatterGL.render(dataset); // black box 
+        scatterGL.render(dataset); // black box
       } else {
         scatterGL.updateDataset(dataset);
       }
@@ -350,7 +388,7 @@ export default {
       faceLandmarksDetection.SupportedPackages.mediapipeFacemesh, // uses mediaPipeFaceMesh model
       { maxFaces: state.maxFaces }
     );
-    renderPrediction(); // start render loop 
+    renderPrediction(); // start render loop
     if (renderPointcloud) {
       document.querySelector(
         "#scatter-gl-container"

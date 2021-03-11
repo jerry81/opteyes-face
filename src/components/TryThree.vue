@@ -5,6 +5,8 @@
 <script>
 import * as THREE from "three";
 import WEBGL from "../utils/webgl";
+import faceMesh from "./data/facemesh.json";
+import { ConvexGeometry } from "three/examples/jsm/geometries/ConvexGeometry.js";
 
 export default {
   data() {
@@ -15,13 +17,16 @@ export default {
       font: undefined,
       text: "Optize",
       group: undefined,
+      faceMesh: undefined
     };
   },
   mounted() {
     this.init();
-    this.drawLine();
+    // this.drawLine();
     this.drawCube();
-    this.drawText();
+    // this.drawText();
+    this.faceMesh = faceMesh[0].scaledMesh;
+    this.drawFace();
 
     if (this.renderer) {
       this.renderer.render(this.scene, this.camera);
@@ -49,6 +54,34 @@ export default {
       document.body.appendChild(this.renderer.domElement);
 
       this.renderer.render(this.scene, this.camera);
+    },
+    drawFace() {
+      const threePts = this.faceMesh.map(point => {
+        return new THREE.Vector3(point[0] / 9, point[1] / 9, point[2] / 9);
+      });
+      const geometry = new ConvexGeometry(threePts);
+      //  const material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+      //  const face = new THREE.Mesh(geometry, material)
+      const wireframe = new THREE.WireframeGeometry(geometry);
+      const material = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        linewidth: 1,
+        linejoin: "miter"
+      });
+
+      const face = new THREE.LineSegments(wireframe, material);
+
+      face.position.y = -20;
+      face.position.x = 0;
+      face.position.z = -50;
+      this.scene.add(face);
+      const animate = () => {
+        requestAnimationFrame(animate);
+        face.rotation.y += 0.01;
+
+        this.render();
+      };
+      animate();
     },
     drawLine() {
       const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffff00 });
@@ -112,7 +145,7 @@ export default {
       // load font
       const loader = new THREE.FontLoader();
       const that = this;
-      loader.load("fonts/optimer_bold.typeface.json", function (response) {
+      loader.load("fonts/optimer_bold.typeface.json", function(response) {
         that.font = response;
         console.log(that.font);
         that.createText();
@@ -127,14 +160,14 @@ export default {
         curveSegments: 4,
         bevelThickness: 3,
         bevelSize: 1.5,
-        bevelEnabled: true,
+        bevelEnabled: true
       });
 
       textGeo.computeBoundingBox();
 
       const materials = [
         new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true }), // front
-        new THREE.MeshPhongMaterial({ color: 0xffffff }), // side
+        new THREE.MeshPhongMaterial({ color: 0xffffff }) // side
       ];
 
       const centerOffset =
@@ -165,7 +198,7 @@ export default {
         new THREE.MeshBasicMaterial({
           color: 0xffffff,
           opacity: 0.5,
-          transparent: true,
+          transparent: true
         })
       );
       plane.position.y = 50;
@@ -176,8 +209,8 @@ export default {
       if (this.renderer) {
         this.renderer.render(this.scene, this.camera);
       }
-    },
-  },
+    }
+  }
 };
 </script>
 

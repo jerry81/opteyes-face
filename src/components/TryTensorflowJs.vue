@@ -324,7 +324,7 @@ async function renderPrediction() {
 
 export default {
   async mounted() {
-    await tf.setBackend(state.backend);
+    await tf.setBackend(state.backend); // options - webgl, webasm, cpu
     // setupDatGui();
     // stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
     // document.getElementById("app").appendChild(stats.dom);
@@ -339,7 +339,7 @@ export default {
     canvas.height = videoHeight;
     const canvasContainer = document.querySelector(".canvas-wrapper");
     canvasContainer.style = `width: ${videoWidth}px; height: ${videoHeight}px`;
-    ctx = canvas.getContext("2d");
+    ctx = canvas.getContext("2d"); // 2d context
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.fillStyle = GREEN;
@@ -347,10 +347,10 @@ export default {
     ctx.lineWidth = 0.5;
     model = await faceLandmarksDetection.load(
       // nn model
-      faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+      faceLandmarksDetection.SupportedPackages.mediapipeFacemesh, // uses mediaPipeFaceMesh model
       { maxFaces: state.maxFaces }
     );
-    renderPrediction();
+    renderPrediction(); // start render loop 
     if (renderPointcloud) {
       document.querySelector(
         "#scatter-gl-container"

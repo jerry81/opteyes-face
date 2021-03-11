@@ -21,8 +21,8 @@
 <script>
 // eslint-disable-next-line
 // import * as THREE from "three";
-import dat from "dat.gui";
-import { ScatterGL } from "scatter-gl";
+import dat from "dat.gui"; // simple gui 
+import { ScatterGL } from "scatter-gl"; // third party
 
 import * as tf from "@tensorflow/tfjs-core";
 import * as faceLandmarksDetection from "@tensorflow-models/face-landmarks-detection";
@@ -32,7 +32,7 @@ import "@tensorflow/tfjs-backend-cpu";
 
 import * as tfjsWasm from "@tensorflow/tfjs-backend-wasm";
 import { TRIANGULATION } from "@/utils/triangulation";
-tfjsWasm.setWasmPaths(
+tfjsWasm.setWasmPaths( // wasm = webassembly
   `https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@${tfjsWasm.version_wasm}/dist/`
 );
 
@@ -42,18 +42,22 @@ const GREEN = "#32EEDB";
 const RED = "#FF2C35";
 const BLUE = "#157AB3";
 
-function isMobile() {
-  const isAndroid = /Android/i.test(navigator.userAgent);
+function isMobile() { // helper function 
+  const isAndroid = /Android/i.test(navigator.userAgent); // i is case insensitive 
   const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   return isAndroid || isiOS;
 }
 
-function distance(a, b) {
+function distance(a, b) { // helper function
   return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
 }
 
-function drawPath(ctx, points, closePath) {
-  const region = new Path2D();
+/**
+ * points - arr of size 2
+ * 
+ */
+function drawPath(ctx, points, closePath) { // helper method, path drawing 
+  const region = new Path2D(); // Path2D : webapi - experimental - canvas 2D API - wrapper for path, saves need to call beginPath  
   region.moveTo(points[0][0], points[0][1]);
   for (let i = 1; i < points.length; i++) {
     const point = points[i];
@@ -65,6 +69,7 @@ function drawPath(ctx, points, closePath) {
   }
   ctx.stroke(region);
 }
+
 let model,
   ctx,
   videoWidth,
@@ -80,6 +85,8 @@ const mobile = isMobile();
 // Don't render the point cloud on mobile in order to maximize performance and
 // to avoid crowding limited screen space.
 const renderPointcloud = mobile === false;
+// mobile has no scatter plot
+
 const stats = new Stats();
 const state = {
   backend: "webgl",

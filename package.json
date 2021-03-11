@@ -1,0 +1,54 @@
+{
+  "name": "opteyes-three",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "dev": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@tensorflow-models/face-landmarks-detection": "^0.0.3",
+    "@tensorflow/tfjs-backend-cpu": "^3.3.0",
+    "@tensorflow/tfjs-backend-wasm": "^3.3.0",
+    "@tensorflow/tfjs-backend-webgl": "^3.3.0",
+    "@tensorflow/tfjs-converter": "^3.3.0",
+    "@tensorflow/tfjs-core": "^3.3.0",
+    "core-js": "^3.9.1",
+    "dat.gui": "^0.7.7",
+    "face-api.js": "^0.22.2",
+    "scatter-gl": "^0.0.7",
+    "stats.js": "^0.17.0",
+    "three": "^0.126.1",
+    "vue": "^2.6.11"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

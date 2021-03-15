@@ -224,12 +224,15 @@ async function renderPrediction() {
         const upperLipsOuter = prediction?.annotations?.lipsUpperOuter;
         const lipsUpperInner = prediction?.annotations?.lipsUpperInner.reverse();
         const innerOffsetted = lipsUpperInner.map(point => {
-          point[1] += 3
           return point
         })
        // let upperLip = upperLipsOuter.concat(lipsUpperInner);
         let upperLip = upperLipsOuter.concat(innerOffsetted) 
         upperLip.push(upperLipsOuter[0]);
+        upperLip = upperLip.map(point => { 
+          point[1] += 2.5
+          return point
+        })
         ctx.beginPath()
         ctx.moveTo(upperLip[0][0], upperLip[0][1]);
         // console.log("triangulation is ", TRIANGULATION.length);
@@ -407,6 +410,7 @@ export default {
 #scatter-gl-container {
   display: inline-block;
   vertical-align: top;
+  margin-top: 50px;
 }
 
 #scatter-gl-container {

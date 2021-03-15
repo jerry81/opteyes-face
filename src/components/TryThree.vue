@@ -23,7 +23,7 @@ export default {
   mounted() {
     this.init();
     // this.drawLine();
-    this.drawCube();
+   // this.drawCube();
     // this.drawText();
     this.faceMesh = faceMesh[0].scaledMesh;
     this.drawFace();
@@ -71,9 +71,9 @@ export default {
 
       const face = new THREE.LineSegments(wireframe, material);
 
-      face.position.y = -20;
-      face.position.x = 0;
-      face.position.z = -50;
+      face.position.y = 0;
+      face.position.x = -10;
+      face.position.z = -90;
       this.scene.add(face);
       const animate = () => {
         requestAnimationFrame(animate);

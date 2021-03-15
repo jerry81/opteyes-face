@@ -1,8 +1,8 @@
 <template>
   <div id="app" class="flex justify-center align-center">
     <!-- <try-face-api /> -->
-    <try-three />
-<!--     <try-tensorflow-js /> -->
+<!--         <try-three /> -->
+    <try-tensorflow-js />
   </div>
 </template>
 
@@ -13,7 +13,7 @@ import TryThree from "./components/TryThree.vue";
 export default {
   name: "App",
   // eslint-disable-next-line
-  components: { TryThree, TryTensorflowJs },
+  components: { TryThree, TryTensorflowJs }
 };
 </script>
 

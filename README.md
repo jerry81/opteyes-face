@@ -66,14 +66,26 @@ nn model architecture
 1.  residual nn architecture - based on pyramidal cells - skips over some layers of network 
 2.  "aggressive subsampling" in early layers - sub-sampling - technique to use a part of data , like chunking
 3.  "shallow part" of neural network - earlier layers?
+4.  completes face even if slightly occluded
+5.  turns low-dimensional mesh into coordinates in last layers of network 
 
 between frames
 
 1.  only passing facial bounding rotated rectangle 
-2.  jitter - pixel-level inconsistencies across video frames 
-3.  
+2.  jitter - pixel-level inconsistencies across video frames affects individual landmarks more, caused by head pose, lighting, camera noise) 
+3.  solution to jitter: one-dimensional temporal filter, noise reduction and "phase lag elimination" - these are mutually exclusive - we prefer noise reduction as humans (stabilization) when inputs dont change quickly
+and prefer phase lag elimination when rate of change is high
+4.  velocity estimation used to attempt to remove phase lag - less lag with smaller inputs (128 with strong lighting), larger errors is the tradeoff
+
 
 ### definitions
 
 ground truth - empirically correct data 
 
+phase lag elimination - angular diff between point where control input to rotor blade and max displacement of blade - in our context it is lag between input and output
+
+IOD - interocular distance 
+
+MAD - mean absolute distance - prediction - ground truth
+
+supervised maachine - learning a function based on example input-output pairs

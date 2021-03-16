@@ -2,7 +2,7 @@
   <div class="container">
     <div class="flex padding">
       <div class="canvas-wrapper">
-        <video id="video" playsinline style />
+        <video id="video" playsinline style="display:none" />
         <canvas id="output" />
       </div>
       <div class="flex-sub">
@@ -10,7 +10,10 @@
       </div>
     </div>
     <div id="scatter-gl-container" />
-    <div id="coutput" />
+    <div
+      id="coutput"
+      style="position: absolute; top: 0; left: 0;margin: 15px; width: 300px; overflow-wrap: break-word"
+    />
     <!-- <img
       id="leftEye"
       src="https://plugins-media.makeupar.com/webconsultation/looks/170428_gemini_natural/patten_eyelash_170428_gemini_01/eyelash/eyelash_170428_gemini_a.png"
@@ -41,9 +44,10 @@ const NUM_IRIS_KEYPOINTS = 5;
 const GREEN = "#32EEDB";
 const RED = "#FF2C35";
 const BLUE = "#157AB3";
+const EYELASH_PIXELS_PER_UNIT = 47;
 
 let camera, renderer, scene;
-let leftUpEyelash
+let leftUpEyelash;
 // leftBottomEyeslash;
 
 function populateOutput(msg) {
@@ -186,18 +190,24 @@ async function renderPrediction() {
       // left up
       const leftEyePoints = prediction.annotations.leftEyeUpper0;
       if (leftEyePoints.length > 0) {
-        const min = Math.max(...leftEyePoints.map(x => x[0]));
         const p1 = leftEyePoints.find(x => x[0] === min);
 
         const target = transform(p1[0], p1[1]); // when in upper left corner, x is -5.5 and y is 2.9
 
         // in lower right corner, x is 4.4, y is -2.6
 
-        populateOutput(target);
-
         leftUpEyelash?.position?.set(target.x, target.y, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
 
-        // sets position in scene 
+        // #region scale
+        const xVals = leftEyePoints.map(pt => pt[0]);
+        const min = Math.max(...xVals);
+        const max = Math.min(...xVals);
+        const eyewidth = Math.abs(max - min);
+        const newScale = eyewidth / EYELASH_PIXELS_PER_UNIT;
+        leftUpEyelash.scale.x = newScale;
+        populateOutput(newScale);
+        // #endregion scale
+        // sets position in scene
       }
 
       // left bottom
@@ -333,19 +343,24 @@ const transform = (a, b, w = 10, h = 10.0) => {
   // x becomes w * (500 - )  since width and height of rendering area is 1000
   return {
     x: (w * (500.0 - a)) / 500.0 - w / 2 + 0.35,
-    y: (h * (500 - b)) / 500.0 - h / 2 - 0.15
+    y: (h * (500 - b)) / 500.0 - h / 2 + 0.03
   };
 };
+
+function getEyelashPlaneHeight(width) {
+  return width * (200 / 476);
+}
 
 function addEyeLash() {
   THREE.Cache.enabled = true;
   const loader = new THREE.TextureLoader(); // load from file
   console.log("attempting to load");
   loader.load(
-    "images/eyelash.png",
+    "images/eyelashcropped.png",
     function(texture) {
       console.log("loaded");
-      const geometry = new THREE.PlaneGeometry(1,1); // width, height
+
+      const geometry = new THREE.PlaneGeometry(1, getEyelashPlaneHeight(1)); // width, height  1 unit of this eyelash is about 47 px
       const meterial = new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true
@@ -400,12 +415,12 @@ function testThreejs() {
   // geometry.scale(0.8, 0.8, 0.8);
   const material = new THREE.MeshBasicMaterial({ map: texture }); // video texture
 
-  const mesh = new THREE.Mesh(geometry, material); 
+  const mesh = new THREE.Mesh(geometry, material);
   // mesh.position.set(0, 0, 0);
   // mesh.lookAt(camera.position);
   scene.add(mesh); // add mesh to scene
-  console.log('mesh is ', mesh)
-  console.log('camera is at ', camera)
+  console.log("mesh is ", mesh);
+  console.log("camera is at ", camera);
 
   const container = document.getElementById("three");
 
@@ -414,9 +429,10 @@ function testThreejs() {
     canvas: container
     // alpha: true,
   });
+  const RENDERER_SIZE = 500;
   // renderer.setClearColor(0xffffff);
   // renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(750, 750); // 1000 x 1000
+  renderer.setSize(RENDERER_SIZE, RENDERER_SIZE); // 1000 x 1000
 
   // const light = new THREE.DirectionalLight(0xffffff, 0.5);
   // light.position.set(10, 0, 10);
@@ -458,8 +474,8 @@ export default {
     video.width = videoWidth;
     video.height = videoHeight;
 
-    console.log('videoWidth', videoWidth)
-    console.log('videoHeight', videoHeight)
+    console.log("videoWidth", videoWidth);
+    console.log("videoHeight", videoHeight);
     testThreejs();
 
     canvas = document.getElementById("output");

@@ -2,7 +2,7 @@
   <div class="container">
     <div class="flex padding">
       <div class="canvas-wrapper">
-        <video id="video" playsinline style="" />
+        <video id="video" playsinline style />
         <canvas id="output" />
       </div>
       <div class="flex-sub">
@@ -10,10 +10,11 @@
       </div>
     </div>
     <div id="scatter-gl-container" />
+    <div id="coutput" />
     <!-- <img
       id="leftEye"
       src="https://plugins-media.makeupar.com/webconsultation/looks/170428_gemini_natural/patten_eyelash_170428_gemini_01/eyelash/eyelash_170428_gemini_a.png"
-    /> -->
+    />-->
   </div>
 </template>
 
@@ -42,7 +43,13 @@ const RED = "#FF2C35";
 const BLUE = "#157AB3";
 
 let camera, renderer, scene;
-let leftUpEyelash, leftBottomEyeslash;
+let leftUpEyelash
+// leftBottomEyeslash;
+
+function populateOutput(msg) {
+  const el = document.getElementById("coutput");
+  el.innerHTML = JSON.stringify(msg);
+}
 
 function isMobile() {
   const isAndroid = /Android/i.test(navigator.userAgent);
@@ -88,7 +95,7 @@ const state = {
   maxFaces: 1,
   triangulateMesh: false,
   predictIrises: false,
-  showFullPoints: true,
+  showFullPoints: true
 };
 
 if (renderPointcloud) {
@@ -100,13 +107,13 @@ function setupDatGui() {
   const gui = new dat.GUI();
   gui
     .add(state, "backend", ["webgl", "wasm", "cpu"])
-    .onChange(async (backend) => {
+    .onChange(async backend => {
       window.cancelAnimationFrame(rafID);
       await tf.setBackend(backend);
       requestAnimationFrame(renderPrediction);
     });
 
-  gui.add(state, "maxFaces", 1, 20, 1).onChange(async (val) => {
+  gui.add(state, "maxFaces", 1, 20, 1).onChange(async val => {
     model = await faceLandmarksDetection.load(
       faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
       { maxFaces: val }
@@ -117,7 +124,7 @@ function setupDatGui() {
   gui.add(state, "predictIrises");
 
   if (renderPointcloud) {
-    gui.add(state, "renderPointcloud").onChange((render) => {
+    gui.add(state, "renderPointcloud").onChange(render => {
       document.querySelector("#scatter-gl-container").style.display = render
         ? "inline-block"
         : "none";
@@ -136,12 +143,12 @@ async function setupCamera() {
       // Only setting the video to a specified size in order to accommodate a
       // point cloud, so on mobile devices accept the default size.
       width: mobile ? undefined : VIDEO_SIZE,
-      height: mobile ? undefined : VIDEO_SIZE,
-    },
+      height: mobile ? undefined : VIDEO_SIZE
+    }
   });
   video.srcObject = stream;
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     video.onloadedmetadata = () => {
       resolve(video);
     };
@@ -155,8 +162,8 @@ async function renderPrediction() {
     input: video,
     returnTensors: false,
     flipHorizontal: false,
-    predictIrises: state.predictIrises,
-  });
+    predictIrises: state.predictIrises
+  }); // array
 
   ctx.drawImage(
     video,
@@ -171,7 +178,7 @@ async function renderPrediction() {
   );
 
   if (predictions.length > 0) {
-    predictions.forEach((prediction) => {
+    predictions.forEach(prediction => {
       const keypoints = prediction.scaledMesh;
       // const keypoints = prediction.annotations.leftEyeUpper1;
       // console.log(keypoints);
@@ -179,24 +186,30 @@ async function renderPrediction() {
       // left up
       const leftEyePoints = prediction.annotations.leftEyeUpper0;
       if (leftEyePoints.length > 0) {
-        const min = Math.max(...leftEyePoints.map((x) => x[0]));
-        const p1 = leftEyePoints.find((x) => x[0] === min);
+        const min = Math.max(...leftEyePoints.map(x => x[0]));
+        const p1 = leftEyePoints.find(x => x[0] === min);
 
-        const target = transform(p1[0], p1[1]);
+        const target = transform(p1[0], p1[1]); // when in upper left corner, x is -5.5 and y is 2.9
 
-        leftUpEyelash.position.set(target.x, target.y, 0.1);
+        // in lower right corner, x is 4.4, y is -2.6
+
+        populateOutput(target);
+
+        leftUpEyelash?.position?.set(target.x, target.y + 0.15, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
+
+        // sets position in scene 
       }
 
       // left bottom
-      const leftEyeLowerPoints = prediction.annotations.leftEyeLower0;
+      /*       const leftEyeLowerPoints = prediction.annotations.leftEyeLower0;
       if (leftEyeLowerPoints.length > 0) {
         const min = Math.max(...leftEyeLowerPoints.map((x) => x[0]));
         const p1 = leftEyeLowerPoints.find((x) => x[0] === min);
 
         const target = transform(p1[0], p1[1]);
 
-        leftBottomEyeslash.position.set(target.x, target.y, 0.1);
-      }
+        leftBottomEyeslash?.position?.set(target.x, target.y, 0.1);
+      } */
 
       if (state.triangulateMesh) {
         ctx.strokeStyle = GREEN;
@@ -205,8 +218,8 @@ async function renderPrediction() {
           const points = [
             TRIANGULATION[i * 3],
             TRIANGULATION[i * 3 + 1],
-            TRIANGULATION[i * 3 + 2],
-          ].map((index) => keypoints[index]);
+            TRIANGULATION[i * 3 + 2]
+          ].map(index => keypoints[index]);
           drawPath(ctx, points, true);
         }
       } else {
@@ -277,9 +290,9 @@ async function renderPrediction() {
       }
     });
     if (renderPointcloud && state.renderPointcloud && scatterGL != null) {
-      const pointsData = predictions.map((prediction) => {
+      const pointsData = predictions.map(prediction => {
         let scaledMesh = prediction.scaledMesh;
-        return scaledMesh.map((point) => [-point[0], -point[1], -point[2]]);
+        return scaledMesh.map(point => [-point[0], -point[1], -point[2]]);
       });
       let flattenedPointsData = [];
       for (let i = 0; i < pointsData.length; i++) {
@@ -287,7 +300,7 @@ async function renderPrediction() {
       }
       const dataset = new ScatterGL.Dataset(flattenedPointsData);
       if (!scatterGLHasInitialized) {
-        scatterGL.setPointColorer((i) => {
+        scatterGL.setPointColorer(i => {
           if (i % (NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS * 2) > NUM_KEYPOINTS) {
             return RED;
           }
@@ -313,91 +326,107 @@ async function renderPrediction() {
   rafID = requestAnimationFrame(renderPrediction);
 }
 
-const transform = (a, b, w = 16.0, h = 10.0) => {
+// a is x coordinate of point to transform
+// b is y coord of point to translate
+// w and h not passed in .  they currently match the dimensions of the plane geometry mesh
+const transform = (a, b, w = 10, h = 10.0) => {
+  // x becomes w * (500 - )  since width and height of rendering area is 1000
   return {
     x: (w * (500.0 - a)) / 500.0 - w / 2 + 0.6,
-    y: (h * (500 - b)) / 500.0 - h / 2 - 0.1,
+    y: (h * (500 - b)) / 500.0 - h / 2 - 0.1
   };
 };
 
 function addEyeLash() {
-  const loader = new THREE.TextureLoader();
-  loader.load("images/eyelash.png", function (texture) {
-    const geometry = new THREE.PlaneGeometry(3, 2);
-    const meterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-    });
-    leftUpEyelash = new THREE.Mesh(geometry, meterial);
-    scene.add(leftUpEyelash);
-  });
+  THREE.Cache.enabled = true;
+  const loader = new THREE.TextureLoader(); // load from file
+  console.log("attempting to load");
+  loader.load(
+    "https://pngimg.com/uploads/eyelash/eyelash_PNG16.png",
+    function(texture) {
+      console.log("loaded");
+      const geometry = new THREE.PlaneGeometry(2, 1.33333); // width, height
+      const meterial = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true
+      });
+      leftUpEyelash = new THREE.Mesh(geometry, meterial);
+      scene.add(leftUpEyelash);
+    },
+    undefined,
+    function(err) {
+      console.error("error while laoding", err);
+    }
+  );
 }
-
+/* 
 function addEyeLashB() {
+  // bottom eyelash
   const loader = new THREE.TextureLoader();
-  loader.load("images/eyelash_b.png", function (texture) {
+  loader.load("images/eyelash_b.png", function(texture) {
     const geometry = new THREE.PlaneGeometry(3, 2);
     const meterial = new THREE.MeshBasicMaterial({
       map: texture,
-      transparent: true,
+      transparent: true
     });
     leftBottomEyeslash = new THREE.Mesh(geometry, meterial);
     scene.add(leftBottomEyeslash);
   });
-}
+} */
 
 function testThreejs() {
+  // loads 3js
   video = document.getElementById("video");
 
-  camera = new THREE.PerspectiveCamera(
+  camera = new THREE.PerspectiveCamera( // field of view, 75 degrees, aspect ratio, near, far points
     75,
-    window.innerWidth / window.innerHeight,
+    1,
     0.1,
     100
   );
   // camera.position.z = 10;
-  camera.position.set(0, 0, 10);
+  camera.position.set(0, 0, 10); // z = 10
 
   scene = new THREE.Scene();
 
-  const axesHelper = new THREE.AxesHelper(90);
-  scene.add(axesHelper);
+  // const axesHelper = new THREE.AxesHelper(90);
+  // scene.add(axesHelper);
 
-  const texture = new THREE.VideoTexture(video);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.repeat.x = -1;
+  const texture = new THREE.VideoTexture(video); // like basic texture but continuously sets needsUpdate to true
+  texture.wrapS = THREE.RepeatWrapping; // wrapping mode - repeats to infinity
+  texture.repeat.x = -1; // repeats in r to l direction
 
-  const geometry = new THREE.PlaneGeometry(16, 10);
+  const geometry = new THREE.PlaneGeometry(10, 10); // geometry, 16 x 10 width, height - why must we change dimensions from 1 x 1 to 16 x 10?
   // geometry.scale(0.8, 0.8, 0.8);
-  const material = new THREE.MeshBasicMaterial({ map: texture });
+  const material = new THREE.MeshBasicMaterial({ map: texture }); // video texture
 
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, material); 
   // mesh.position.set(0, 0, 0);
   // mesh.lookAt(camera.position);
-  scene.add(mesh);
+  scene.add(mesh); // add mesh to scene
 
   const container = document.getElementById("three");
 
   renderer = new THREE.WebGLRenderer({
     antialias: true,
-    canvas: container,
+    canvas: container
     // alpha: true,
   });
   // renderer.setClearColor(0xffffff);
   // renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(1000, 1000);
+  renderer.setSize(750, 750); // 1000 x 1000
 
   // const light = new THREE.DirectionalLight(0xffffff, 0.5);
   // light.position.set(10, 0, 10);
   // scene.add(light);
 
-  addLine();
+  // addLine();
 
   addEyeLash();
-  addEyeLashB();
+  // addEyeLashB();
 }
 
-function addLine() {
+/* function addLine() {
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
   const linePoints = [];
   linePoints.push(new THREE.Vector3(-8, 5, 0));
@@ -413,7 +442,7 @@ function addLine() {
 
   scene.add(line);
 }
-
+ */
 export default {
   async mounted() {
     await tf.setBackend(state.backend);
@@ -427,6 +456,8 @@ export default {
     video.width = videoWidth;
     video.height = videoHeight;
 
+    console.log('videoWidth', videoWidth)
+    console.log('videoHeight', videoHeight)
     testThreejs();
 
     canvas = document.getElementById("output");
@@ -435,8 +466,8 @@ export default {
     const canvasContainer = document.querySelector(".canvas-wrapper");
     canvasContainer.style = `width: ${videoWidth}px; height: ${videoHeight}px`;
     ctx = canvas.getContext("2d");
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
+    ctx.translate(canvas.width, 0); // move right the length of canvas
+    ctx.scale(-1, 1); // flip x
     ctx.fillStyle = GREEN;
     ctx.strokeStyle = GREEN;
     ctx.lineWidth = 0.5;
@@ -454,7 +485,7 @@ export default {
     //     { rotateOnStart: false, selectEnabled: false }
     //   );
     // }
-  },
+  }
 };
 </script>
 

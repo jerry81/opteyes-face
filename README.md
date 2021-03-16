@@ -61,6 +61,18 @@ for obtaining 468 3d mesh points for training
 using initial model and 30% of the output from it, suitable for next step
 2.  refine x and y of bootstrapped coordintes manually with annotation tools - allows multiple points to be moved at once
 
+nn model architecture 
+
+1.  residual nn architecture - based on pyramidal cells - skips over some layers of network 
+2.  "aggressive subsampling" in early layers - sub-sampling - technique to use a part of data , like chunking
+3.  "shallow part" of neural network - earlier layers?
+
+between frames
+
+1.  only passing facial bounding rotated rectangle 
+2.  jitter - pixel-level inconsistencies across video frames 
+3.  
+
 ### definitions
 
 ground truth - empirically correct data 

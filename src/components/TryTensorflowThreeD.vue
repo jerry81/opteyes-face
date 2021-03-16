@@ -195,7 +195,7 @@ async function renderPrediction() {
 
         populateOutput(target);
 
-        leftUpEyelash?.position?.set(target.x, target.y + 0.15, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
+        leftUpEyelash?.position?.set(target.x, target.y, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
 
         // sets position in scene 
       }
@@ -332,8 +332,8 @@ async function renderPrediction() {
 const transform = (a, b, w = 10, h = 10.0) => {
   // x becomes w * (500 - )  since width and height of rendering area is 1000
   return {
-    x: (w * (500.0 - a)) / 500.0 - w / 2 + 0.6,
-    y: (h * (500 - b)) / 500.0 - h / 2 - 0.1
+    x: (w * (500.0 - a)) / 500.0 - w / 2 + 0.35,
+    y: (h * (500 - b)) / 500.0 - h / 2 - 0.15
   };
 };
 
@@ -342,10 +342,10 @@ function addEyeLash() {
   const loader = new THREE.TextureLoader(); // load from file
   console.log("attempting to load");
   loader.load(
-    "https://pngimg.com/uploads/eyelash/eyelash_PNG16.png",
+    "images/eyelash.png",
     function(texture) {
       console.log("loaded");
-      const geometry = new THREE.PlaneGeometry(2, 1.33333); // width, height
+      const geometry = new THREE.PlaneGeometry(1,1); // width, height
       const meterial = new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true
@@ -379,7 +379,7 @@ function testThreejs() {
   video = document.getElementById("video");
 
   camera = new THREE.PerspectiveCamera( // field of view, 75 degrees, aspect ratio, near, far points
-    75,
+    53, // full fov from top to bottom
     1,
     0.1,
     100
@@ -404,6 +404,8 @@ function testThreejs() {
   // mesh.position.set(0, 0, 0);
   // mesh.lookAt(camera.position);
   scene.add(mesh); // add mesh to scene
+  console.log('mesh is ', mesh)
+  console.log('camera is at ', camera)
 
   const container = document.getElementById("three");
 

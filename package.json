@@ -9,7 +9,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@tensorflow-models/face-landmarks-detection": "^0.0.3",
+    "@tensorflow-models/face-landmarks-detection": "^0.0.3", 
     "@tensorflow/tfjs-backend-cpu": "^3.3.0",
     "@tensorflow/tfjs-backend-wasm": "^3.3.0",
     "@tensorflow/tfjs-backend-webgl": "^3.3.0",

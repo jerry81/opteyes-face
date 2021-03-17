@@ -45,6 +45,8 @@ const GREEN = "#32EEDB";
 const RED = "#FF2C35";
 const BLUE = "#157AB3";
 const EYELASH_PIXELS_PER_UNIT = 47;
+const RIGHT_UPPER_MAP = [33, 246, 161, 160, 159, 158, 157, 173, 133];
+// const LEFT_UPPER_MAP2 = [463, 414, 286, 258, 257, 259, 260, 467, 359];
 
 let camera, renderer, scene;
 let leftUpEyelash;
@@ -98,7 +100,7 @@ const state = {
   backend: "webgl",
   maxFaces: 1,
   triangulateMesh: false,
-  predictIrises: false,
+  predictIrises: true,
   showFullPoints: true
 };
 
@@ -163,6 +165,13 @@ async function setupCamera() {
   return rad * (180/Math.PI)
 } */
 
+function getAvg(arr) {
+  const sum = arr.reduce((prev, cur) => {
+    return prev + cur;
+  });
+  return sum / arr.length;
+}
+
 async function renderPrediction() {
   stats.begin();
 
@@ -192,7 +201,10 @@ async function renderPrediction() {
       // console.log(keypoints);
       // NUM_KEYPOINTS = keypoints.length;
       // left up
+      populateOutput(Object.keys(prediction.annotations));
       const leftEyePoints = prediction.annotations.leftEyeUpper0;
+      const leftEyePoints2 = prediction.annotations.leftEyeUpper1;
+      const leftEyePoints3 = prediction.annotations.leftEyeUpper2;
       const xVals = leftEyePoints.map(pt => pt[0]);
       const yVals = leftEyePoints.map(pt => pt[1]);
       // const zVals = leftEyePoints.map(pt => pt[2]);
@@ -200,11 +212,13 @@ async function renderPrediction() {
       if (leftEyePoints.length > 0) {
         const p1 = leftEyePoints.find(x => x[0] === min);
         if (!p1) return;
-        const target = transform(p1[0], p1[1]); // when in upper left corner, x is -5.5 and y is 2.9
-
+        const avgX = getAvg(xVals);
+        const avgY = getAvg(yVals);
+        // const target = transform(p1[0], p1[1]); // when in upper left corner, x is -5.5 and y is 2.9
+        const target = transform(avgX, avgY);
         // in lower right corner, x is 4.4, y is -2.6
 
-        leftUpEyelash?.position?.set(target.x, target.y, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
+        leftUpEyelash?.position?.set(target.x - 0.1, target.y - 0.01, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
 
         // #region scale and rotation
 
@@ -230,9 +244,9 @@ async function renderPrediction() {
         const ylast = yVals[yVals.length - 1];
         const xfirst = xVals[0];
         const xlast = xVals[xVals.length - 1];
-        const run = xfirst - xlast
-        const rise = ylast - yfirst
-        const slope = rise/run
+        const run = xfirst - xlast;
+        const rise = ylast - yfirst;
+        const slope = rise / run;
         // tilted left, slope is -0.55
         // straight on .004
         // tilted right, slope is .55
@@ -240,13 +254,12 @@ async function renderPrediction() {
         const eyewidth = Math.abs(max - min);
         const newScale = eyewidth / EYELASH_PIXELS_PER_UNIT;
         leftUpEyelash.scale.x = newScale;
-        
 
         // naive z-rotation - independent of scale
-        const newZRot = Math.atan(slope)
-        leftUpEyelash.rotation.z = -newZRot
+        const newZRot = Math.atan(slope);
+        leftUpEyelash.rotation.z = -newZRot - 0.1;
 
-        populateOutput(slope);
+        // populateOutput(slope);
         // #endregion scale
         // sets position in scene
       }
@@ -284,9 +297,33 @@ async function renderPrediction() {
           //   ctx.fill();
           // }
 
-          for (let i = 0; i < leftEyePoints.length; i++) {
+          /*           for (let i = 0; i < leftEyePoints.length; i++) {
             const x = leftEyePoints[i][0];
             const y = leftEyePoints[i][1];
+            ctx.beginPath();
+            ctx.arc(x, y, 1, 0, 2 * Math.PI);
+            ctx.fill();
+          } */
+          let leftUpper = RIGHT_UPPER_MAP.map(idx => keypoints[idx]);
+          for (let i = 0; i < leftUpper.length; i++) {
+            const x = leftUpper[i][0];
+            const y = leftUpper[i][1];
+            ctx.beginPath();
+            ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+          ctx.fillStyle = RED;
+          for (let i = 0; i < leftEyePoints2.length; i++) {
+            const x = leftEyePoints2[i][0];
+            const y = leftEyePoints2[i][1];
+            ctx.beginPath();
+            ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+          ctx.fillStyle = BLUE;
+          for (let i = 0; i < leftEyePoints3.length; i++) {
+            const x = leftEyePoints3[i][0];
+            const y = leftEyePoints3[i][1];
             ctx.beginPath();
             ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
             ctx.fill();
@@ -315,7 +352,7 @@ async function renderPrediction() {
           0,
           2 * Math.PI
         );
-        ctx.stroke();
+     //   ctx.stroke();
         if (keypoints.length > NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS) {
           const rightCenter = keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS];
           const rightDiameterY = distance(
@@ -336,7 +373,7 @@ async function renderPrediction() {
             0,
             2 * Math.PI
           );
-          ctx.stroke();
+         //  ctx.stroke();
         }
       }
     });
@@ -384,7 +421,7 @@ const transform = (a, b, w = 10, h = 10.0) => {
   // x becomes w * (500 - )  since width and height of rendering area is 1000
   return {
     x: (w * (500.0 - a)) / 500.0 - w / 2,
-    y: (h * (500 - b)) / 500.0 - h / 2,
+    y: (h * (500 - b)) / 500.0 - h / 2
   };
 };
 
@@ -401,7 +438,7 @@ function addEyeLash() {
     function(texture) {
       console.log("loaded");
 
-      const geometry = new THREE.PlaneGeometry(1, getEyelashPlaneHeight(1)); // width, height  1 unit of this eyelash is about 47 px
+      const geometry = new THREE.PlaneGeometry(1.1, getEyelashPlaneHeight(1)); // width, height  1 unit of this eyelash is about 47 px
       const meterial = new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true
@@ -470,7 +507,7 @@ function testThreejs() {
     canvas: container
     // alpha: true,
   });
-  const RENDERER_SIZE = 500;
+  const RENDERER_SIZE = 750;
   // renderer.setClearColor(0xffffff);
   // renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(RENDERER_SIZE, RENDERER_SIZE); // 1000 x 1000
@@ -532,7 +569,7 @@ export default {
     ctx.lineWidth = 0.5;
     model = await faceLandmarksDetection.load(
       faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-      { maxFaces: state.maxFaces }
+      { maxFaces: state.maxFaces, predictIrises: true }
     );
     renderPrediction();
     // if (renderPointcloud) {

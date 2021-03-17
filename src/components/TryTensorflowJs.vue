@@ -45,6 +45,7 @@ const NUM_IRIS_KEYPOINTS = 5;
 const GREEN = "#32EEDB";
 const RED = "#FF2C35";
 const BLUE = "#157AB3";
+const LEFT_UPPER_MAP = [33, 246, 161, 160, 159, 158, 157, 173, 133];
 
 function isMobile() {
   // helper function
@@ -99,7 +100,7 @@ const state = {
   // gui control rows
   backend: "webgl",
   maxFaces: 1,
-  triangulateMesh: true,
+  triangulateMesh: false,
   predictIrises: true
 };
 
@@ -128,7 +129,9 @@ function setupDatGui() {
     model = await faceLandmarksDetection.load(
       // hookup maxFaces to gui
       faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-      { maxFaces: val }
+      {
+        maxFaces: val
+      }
     );
   });
 
@@ -224,16 +227,16 @@ async function renderPrediction() {
         const upperLipsOuter = prediction?.annotations?.lipsUpperOuter;
         const lipsUpperInner = prediction?.annotations?.lipsUpperInner.reverse();
         const innerOffsetted = lipsUpperInner.map(point => {
-          return point
-        })
-       // let upperLip = upperLipsOuter.concat(lipsUpperInner);
-        let upperLip = upperLipsOuter.concat(innerOffsetted) 
+          return point;
+        });
+        // let upperLip = upperLipsOuter.concat(lipsUpperInner);
+        let upperLip = upperLipsOuter.concat(innerOffsetted);
         upperLip.push(upperLipsOuter[0]);
-        upperLip = upperLip.map(point => { 
-          point[1] += 2.5
-          return point
-        })
-        ctx.beginPath()
+        upperLip = upperLip.map(point => {
+          point[1] += 2.5;
+          return point;
+        });
+        ctx.beginPath();
         ctx.moveTo(upperLip[0][0], upperLip[0][1]);
         // console.log("triangulation is ", TRIANGULATION.length);
         for (let i = 0; i < upperLip.length - 1; i++) {
@@ -253,7 +256,7 @@ async function renderPrediction() {
         ctx.closePath();
         ctx.fill();
         // ctx.stroke()
-       // ctx.stroke();
+        // ctx.stroke();
         /*          for (let i = 0; i < lipsUpperInner.length - 1; i++) {
           // triangulation - a util that is an array of length 2640
           if (lipsUpperInner && lipsUpperInner[0]) {
@@ -264,12 +267,15 @@ async function renderPrediction() {
       } else {
         // triangulation option off
         ctx.fillStyle = GREEN;
-
-        for (let i = 0; i < NUM_KEYPOINTS; i++) {
+        const leftUpper = LEFT_UPPER_MAP.map(idx => keypoints[idx]);
+        /*  for (let i = 0; i < NUM_KEYPOINTS; i++) {
           // hardcoded to 468 points
           const x = keypoints[i][0];
-          const y = keypoints[i][1];
-
+          const y = keypoints[i][1]; */
+        for (let i = 0; i < leftUpper.length; i++) {
+          // hardcoded to 468 points
+          const x = leftUpper[i][0];
+          const y = leftUpper[i][1];
           ctx.beginPath();
           ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI); // draw dots 1px radius
           ctx.fill();
@@ -300,7 +306,7 @@ async function renderPrediction() {
           0,
           2 * Math.PI
         );
-        ctx.stroke();
+       // ctx.stroke();
 
         if (keypoints.length > NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS) {
           const rightCenter = keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS];
@@ -323,7 +329,7 @@ async function renderPrediction() {
             0,
             2 * Math.PI
           );
-          ctx.stroke();
+          // ctx.stroke();
         }
       }
     });
@@ -366,9 +372,9 @@ async function renderPrediction() {
 export default {
   async mounted() {
     await tf.setBackend(state.backend); // options - webgl, webasm, cpu
-    // setupDatGui();
-    // stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-    // document.getElementById("app").appendChild(stats.dom);
+    setupDatGui();
+    stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.getElementById("app").appendChild(stats.dom);
     await setupCamera();
     video.play();
     videoWidth = video.videoWidth;

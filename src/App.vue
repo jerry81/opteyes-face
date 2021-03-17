@@ -2,7 +2,7 @@
   <div id="app" class="flex justify-center align-center">
     <!-- <try-face-api /> -->
     <!-- <try-three /> -->
-    <!-- <try-tensorflow-js /> -->
+ <!--    <try-tensorflow-js /> -->
     <try-tensorflow-three-d />
   </div>
 </template>

@@ -159,6 +159,10 @@ async function setupCamera() {
   });
 }
 
+/* function toDegrees(rad) {
+  return rad * (180/Math.PI)
+} */
+
 async function renderPrediction() {
   stats.begin();
 
@@ -189,23 +193,60 @@ async function renderPrediction() {
       // NUM_KEYPOINTS = keypoints.length;
       // left up
       const leftEyePoints = prediction.annotations.leftEyeUpper0;
+      const xVals = leftEyePoints.map(pt => pt[0]);
+      const yVals = leftEyePoints.map(pt => pt[1]);
+      // const zVals = leftEyePoints.map(pt => pt[2]);
+      const min = Math.max(...xVals);
       if (leftEyePoints.length > 0) {
         const p1 = leftEyePoints.find(x => x[0] === min);
-
+        if (!p1) return;
         const target = transform(p1[0], p1[1]); // when in upper left corner, x is -5.5 and y is 2.9
 
         // in lower right corner, x is 4.4, y is -2.6
 
         leftUpEyelash?.position?.set(target.x, target.y, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
 
-        // #region scale
-        const xVals = leftEyePoints.map(pt => pt[0]);
-        const min = Math.max(...xVals);
+        // #region scale and rotation
+
+        // when facing straight on:
+        // z values - [7.2, 5.5, 4.1, 2.9, 2.7, 3.4, 4.4]
+
+        // when turned right
+        // z values - [-17.2, -17.3, -17.1, -15.4, -13.1, -10.4, -8.4]
+
+        // when turned left
+        // z values - [25.8, 23.6, 21.1, 18.0, 15.8, 14.7, 14.3]
+
+        // close up
+        // z values - [4.3, 2.6, 1.1, -0.2, -0.4, 0.5, 1.6]
+
+        // far away
+        // z values - [11.1, 9.5, 8.0, 6.8, 6.5, 7.1, 7.9]
+
+        // in x-y plane can get current angle of eyelash using first and last point.
+
+        //naive scale - just measures x axis width of bounding box
+        const yfirst = yVals[0];
+        const ylast = yVals[yVals.length - 1];
+        const xfirst = xVals[0];
+        const xlast = xVals[xVals.length - 1];
+        const run = xfirst - xlast
+        const rise = ylast - yfirst
+        const slope = rise/run
+        // tilted left, slope is -0.55
+        // straight on .004
+        // tilted right, slope is .55
         const max = Math.min(...xVals);
         const eyewidth = Math.abs(max - min);
         const newScale = eyewidth / EYELASH_PIXELS_PER_UNIT;
         leftUpEyelash.scale.x = newScale;
-        populateOutput(newScale);
+        
+
+        // naive z-rotation - independent of scale
+        const newZRot = Math.atan(slope)
+        leftUpEyelash.rotation.z = -newZRot
+
+        populateOutput(slope);
         // #endregion scale
         // sets position in scene
       }
@@ -342,8 +383,8 @@ async function renderPrediction() {
 const transform = (a, b, w = 10, h = 10.0) => {
   // x becomes w * (500 - )  since width and height of rendering area is 1000
   return {
-    x: (w * (500.0 - a)) / 500.0 - w / 2 + 0.35,
-    y: (h * (500 - b)) / 500.0 - h / 2 + 0.03
+    x: (w * (500.0 - a)) / 500.0 - w / 2,
+    y: (h * (500 - b)) / 500.0 - h / 2,
   };
 };
 

@@ -67,6 +67,14 @@ function distance(a, b) {
   return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
 }
 
+function distance3d(a, b) {
+  return Math.sqrt(
+    Math.pow(a[0] - b[0], 2) +
+      Math.pow(a[1] - b[1], 2) +
+      Math.pow(a[2] - b[2], 2)
+  );
+}
+
 function drawPath(ctx, points, closePath) {
   const region = new Path2D();
   region.moveTo(points[0][0], points[0][1]);
@@ -201,12 +209,13 @@ async function renderPrediction() {
       // console.log(keypoints);
       // NUM_KEYPOINTS = keypoints.length;
       // left up
-      populateOutput(Object.keys(prediction.annotations));
+      // populateOutput(Object.keys(prediction.annotations));
       const leftEyePoints = prediction.annotations.leftEyeUpper0;
       const leftEyePoints2 = prediction.annotations.leftEyeUpper1;
       const leftEyePoints3 = prediction.annotations.leftEyeUpper2;
       const xVals = leftEyePoints.map(pt => pt[0]);
       const yVals = leftEyePoints.map(pt => pt[1]);
+      const zVals = leftEyePoints.map(pt => pt[2]);
       // const zVals = leftEyePoints.map(pt => pt[2]);
       const min = Math.max(...xVals);
       if (leftEyePoints.length > 0) {
@@ -218,7 +227,7 @@ async function renderPrediction() {
         const target = transform(avgX, avgY);
         // in lower right corner, x is 4.4, y is -2.6
 
-        leftUpEyelash?.position?.set(target.x - 0.1, target.y - 0.01, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
+        leftUpEyelash?.position?.set(target.x - 0.1, target.y + 0.03, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
 
         // #region scale and rotation
 
@@ -239,27 +248,38 @@ async function renderPrediction() {
 
         // in x-y plane can get current angle of eyelash using first and last point.
 
-        //naive scale - just measures x axis width of bounding box
         const yfirst = yVals[0];
         const ylast = yVals[yVals.length - 1];
         const xfirst = xVals[0];
         const xlast = xVals[xVals.length - 1];
         const run = xfirst - xlast;
         const rise = ylast - yfirst;
+        const zfirst = zVals[0];
+        const zlast = zVals[zVals.length - 1];
+        const deepRun = zlast - zfirst;
         const slope = rise / run;
+        const zSlope = deepRun / run;
         // tilted left, slope is -0.55
         // straight on .004
         // tilted right, slope is .55
-        const max = Math.min(...xVals);
-        const eyewidth = Math.abs(max - min);
-        const newScale = eyewidth / EYELASH_PIXELS_PER_UNIT;
+     //   const max = Math.min(...xVals);
+/*         const eyewidth = Math.abs(max - min); */
+        //naive scale - just measures x axis width of bounding box
+        const firstPoint = leftEyePoints[0]
+        const lastPoint = leftEyePoints[leftEyePoints.length - 1]
+      //  console.log('firstPoint,', firstPoint, lastPoint)
+
+        const eyelashDist = distance3d(firstPoint, lastPoint)
+                const newScale = eyelashDist / EYELASH_PIXELS_PER_UNIT;
         leftUpEyelash.scale.x = newScale;
 
         // naive z-rotation - independent of scale
         const newZRot = Math.atan(slope);
-        leftUpEyelash.rotation.z = -newZRot - 0.1;
+        leftUpEyelash.rotation.z = -newZRot;
+        const newYRot = Math.atan(zSlope);
+        leftUpEyelash.rotation.y = newYRot * 1.5;
 
-        // populateOutput(slope);
+        populateOutput(newYRot);
         // #endregion scale
         // sets position in scene
       }
@@ -352,7 +372,7 @@ async function renderPrediction() {
           0,
           2 * Math.PI
         );
-     //   ctx.stroke();
+        //   ctx.stroke();
         if (keypoints.length > NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS) {
           const rightCenter = keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS];
           const rightDiameterY = distance(
@@ -373,7 +393,7 @@ async function renderPrediction() {
             0,
             2 * Math.PI
           );
-         //  ctx.stroke();
+          //  ctx.stroke();
         }
       }
     });

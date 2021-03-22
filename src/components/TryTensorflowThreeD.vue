@@ -306,12 +306,18 @@ async function renderPrediction() {
         const transformedLipLowerPoints = lipLowerPoints.map((x) =>
           transform(x[0], x[1])
         );
-        addLipLower(transformedLipLowerPoints);
-        lipLower.position.set(
+        populateOutput(transformedLipLowerPoints)
+         addLipLower(transformedLipLowerPoints);
+       
+       /*lipLower.position.set(
           transformedLipLowerPoints[0].x,
           transformedLipLowerPoints[0].y,
-          0.1
-        );
+          0.0001
+        ); */
+/*          leftUpEyelash?.position?.set(          
+           transformedLipLowerPoints[0].x,
+           transformedLipLowerPoints[0].y,
+           0.0001) */
       }
 
       if (state.triangulateMesh) {

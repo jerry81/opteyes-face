@@ -57,6 +57,8 @@ function populateOutput(msg) {
   el.innerHTML = JSON.stringify(msg);
 }
 
+let lipLower;
+
 function isMobile() {
   const isAndroid = /Android/i.test(navigator.userAgent);
   const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -227,7 +229,7 @@ async function renderPrediction() {
         const target = transform(avgX, avgY);
         // in lower right corner, x is 4.4, y is -2.6
 
-        leftUpEyelash?.position?.set(target.x - 0.1, target.y + 0.03, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
+        leftUpEyelash?.position?.set(target.x - 0.13, target.y + 0.03, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
 
         // #region scale and rotation
 
@@ -262,22 +264,22 @@ async function renderPrediction() {
         // tilted left, slope is -0.55
         // straight on .004
         // tilted right, slope is .55
-     //   const max = Math.min(...xVals);
-/*         const eyewidth = Math.abs(max - min); */
+        //   const max = Math.min(...xVals);
+        /*         const eyewidth = Math.abs(max - min); */
         //naive scale - just measures x axis width of bounding box
-        const firstPoint = leftEyePoints[0]
-        const lastPoint = leftEyePoints[leftEyePoints.length - 1]
-      //  console.log('firstPoint,', firstPoint, lastPoint)
+        const firstPoint = leftEyePoints[0];
+        const lastPoint = leftEyePoints[leftEyePoints.length - 1];
+        //  console.log('firstPoint,', firstPoint, lastPoint)
 
-        const eyelashDist = distance3d(firstPoint, lastPoint)
-                const newScale = eyelashDist / EYELASH_PIXELS_PER_UNIT;
+        const eyelashDist = distance3d(firstPoint, lastPoint);
+        const newScale = eyelashDist / EYELASH_PIXELS_PER_UNIT;
         leftUpEyelash.scale.x = newScale;
 
         // naive z-rotation - independent of scale
         const newZRot = Math.atan(slope);
-        leftUpEyelash.rotation.z = -newZRot;
+        leftUpEyelash.rotation.z = -newZRot * 1.05 - .2;
         const newYRot = Math.atan(zSlope);
-        leftUpEyelash.rotation.y = newYRot * 1.5;
+        leftUpEyelash.rotation.y = newYRot * 1.3;
 
         populateOutput(newYRot);
         // #endregion scale
@@ -294,6 +296,23 @@ async function renderPrediction() {
 
         leftBottomEyeslash?.position?.set(target.x, target.y, 0.1);
       } */
+
+      // lip lower
+      const lipLowerPoints = [
+        ...prediction.annotations.lipsLowerInner,
+        ...prediction.annotations.lipsLowerOuter,
+      ];
+      if (lipLowerPoints.length > 0) {
+        const transformedLipLowerPoints = lipLowerPoints.map((x) =>
+          transform(x[0], x[1])
+        );
+        addLipLower(transformedLipLowerPoints);
+        lipLower.position.set(
+          transformedLipLowerPoints[0].x,
+          transformedLipLowerPoints[0].y,
+          0.1
+        );
+      }
 
       if (state.triangulateMesh) {
         ctx.strokeStyle = GREEN;
@@ -458,7 +477,7 @@ function addEyeLash() {
     function(texture) {
       console.log("loaded");
 
-      const geometry = new THREE.PlaneGeometry(1.1, getEyelashPlaneHeight(1)); // width, height  1 unit of this eyelash is about 47 px
+      const geometry = new THREE.PlaneGeometry(1.5, getEyelashPlaneHeight(1.5)); // width, height  1 unit of this eyelash is about 47 px
       const meterial = new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true
@@ -486,6 +505,33 @@ function addEyeLashB() {
     scene.add(leftBottomEyeslash);
   });
 } */
+
+function addLipLower(poly) {
+  if (lipLower != null) {
+    scene.remove(lipLower);
+  }
+
+  if (!poly || poly.length === 0) return;
+
+  const shape = new THREE.Shape();
+  shape.moveTo(poly[0].x, poly[0].y);
+
+  for (let index = 0; index < poly.length; index++) {
+    const point = poly[index];
+    shape.lineTo(point.x, point.y);
+  }
+  shape.lineTo(poly[0].x, poly[0].y);
+
+  const geometry = new THREE.ShapeGeometry(shape);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x800000,
+    transparent: true,
+    opacity: 0.75,
+  });
+
+  lipLower = new THREE.Mesh(geometry, material);
+  scene.add(lipLower);
+}
 
 function testThreejs() {
   // loads 3js

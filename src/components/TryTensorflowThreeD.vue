@@ -47,6 +47,33 @@ const BLUE = "#157AB3";
 const EYELASH_PIXELS_PER_UNIT = 47;
 const RIGHT_UPPER_MAP = [33, 246, 161, 160, 159, 158, 157, 173, 133];
 // const LEFT_UPPER_MAP2 = [463, 414, 286, 258, 257, 259, 260, 467, 359];
+const LOWER_LIP_POINTS = [
+   61,
+  62,
+  78,
+  95, 
+  88,
+  178,
+  87,
+  14, 
+  317,
+  402,
+  318,
+  324,
+  308,
+/*   290, */
+  291,
+  375, 
+  321,
+  405,
+  314,
+  17,
+  84,
+  181,
+  91,
+  146,
+  61
+];
 
 let camera, renderer, scene;
 let leftUpEyelash;
@@ -277,7 +304,7 @@ async function renderPrediction() {
 
         // naive z-rotation - independent of scale
         const newZRot = Math.atan(slope);
-        leftUpEyelash.rotation.z = -newZRot * 1.05 - .2;
+        leftUpEyelash.rotation.z = -newZRot * 1.05 - 0.2;
         const newYRot = Math.atan(zSlope);
         leftUpEyelash.rotation.y = newYRot * 1.3;
 
@@ -298,23 +325,26 @@ async function renderPrediction() {
       } */
 
       // lip lower
-      const lipLowerPoints = [
+      /*       const lipLowerPoints = [
         ...prediction.annotations.lipsLowerInner,
-        ...prediction.annotations.lipsLowerOuter,
-      ];
+        ...prediction.annotations.lipsLowerOuter
+      ]; */
+      const lipLowerPoints = LOWER_LIP_POINTS.map(
+        idx => prediction.scaledMesh[idx]
+      );
+
       if (lipLowerPoints.length > 0) {
-        const transformedLipLowerPoints = lipLowerPoints.map((x) =>
+        const transformedLipLowerPoints = lipLowerPoints.map(x =>
           transform(x[0], x[1])
         );
-        populateOutput(transformedLipLowerPoints)
-         addLipLower(transformedLipLowerPoints);
-       
-       /*lipLower.position.set(
+        addLipLower(transformedLipLowerPoints);
+
+        /*lipLower.position.set(
           transformedLipLowerPoints[0].x,
           transformedLipLowerPoints[0].y,
           0.0001
         ); */
-/*          leftUpEyelash?.position?.set(          
+        /*          leftUpEyelash?.position?.set(          
            transformedLipLowerPoints[0].x,
            transformedLipLowerPoints[0].y,
            0.0001) */
@@ -358,6 +388,14 @@ async function renderPrediction() {
             ctx.fill();
           }
           ctx.fillStyle = RED;
+          let lowerLip = LOWER_LIP_POINTS.map(idx => keypoints[idx]);
+          for (let i = 0; i < lowerLip.length; i++) {
+            const x = lowerLip[i][0];
+            const y = lowerLip[i][1];
+            ctx.beginPath();
+            ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
+            ctx.fill();
+          }
           for (let i = 0; i < leftEyePoints2.length; i++) {
             const x = leftEyePoints2[i][0];
             const y = leftEyePoints2[i][1];
@@ -532,7 +570,7 @@ function addLipLower(poly) {
   const material = new THREE.MeshBasicMaterial({
     color: 0x800000,
     transparent: true,
-    opacity: 0.75,
+    opacity: 0.75
   });
 
   lipLower = new THREE.Mesh(geometry, material);

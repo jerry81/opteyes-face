@@ -108,7 +108,7 @@ const UPPER_LIP_POINTS = [
 ];
 
 let camera, renderer, scene;
-let leftUpEyelash;
+let leftUpEyelash, rightUpEyelash;
 // leftBottomEyeslash;
 
 function populateOutput(msg) {
@@ -149,6 +149,60 @@ function drawPath(ctx, points, closePath) {
   }
   ctx.stroke(region);
 }
+
+function placeEyelash(points, object, xOffset, yOffset, zRotMultiplier, zRotOffset, yRotMultiplier) {
+      const xVals = points.map((pt) => pt[0]);
+      const yVals = points.map((pt) => pt[1]);
+      const zVals = points.map((pt) => pt[2]);
+      // const zVals = leftEyePoints.map(pt => pt[2]);
+      const min = Math.max(...xVals);
+      if (points.length > 0) {
+        const p1 = points.find((x) => x[0] === min);
+        if (!p1) return;
+
+        const avgX = getAvg(xVals);
+        const avgY = getAvg(yVals);
+        // const target = transform(p1[0], p1[1]); // when in upper left corner, x is -5.5 and y is 2.9
+        const target = transform(avgX, avgY);
+        // in lower right corner, x is 4.4, y is -2.6
+
+        object?.position?.set(target.x + xOffset, target.y + yOffset, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
+
+        // in x-y plane can get current angle of eyelash using first and last point.
+
+        const yfirst = yVals[0];
+        const ylast = yVals[yVals.length - 1];
+        const xfirst = xVals[0];
+        const xlast = xVals[xVals.length - 1];
+        const run = xfirst - xlast;
+        const rise = ylast - yfirst;
+        const zfirst = zVals[0];
+        const zlast = zVals[zVals.length - 1];
+        const deepRun = zlast - zfirst;
+        const slope = rise / run;
+        const zSlope = deepRun / run;
+        // tilted left, slope is -0.55
+        // straight on .004
+        // tilted right, slope is .55
+        //   const max = Math.min(...xVals);
+        /*         const eyewidth = Math.abs(max - min); */
+        //naive scale - just measures x axis width of bounding box
+        const firstPoint = points[0];
+        const lastPoint = points[points.length - 1];
+        //  console.log('firstPoint,', firstPoint, lastPoint)
+
+        const eyelashDist = distance3d(firstPoint, lastPoint);
+        const newScale = eyelashDist / EYELASH_PIXELS_PER_UNIT;
+        object.scale.x = newScale;
+
+        // naive z-rotation - independent of scale
+        const newZRot = Math.atan(slope);
+        object.rotation.z = -newZRot * zRotMultiplier + zRotOffset;
+        const newYRot = Math.atan(zSlope);
+        object.rotation.y = newYRot * yRotMultiplier;
+      }
+}
+
 let model,
   ctx,
   videoWidth,
@@ -233,80 +287,13 @@ async function renderPrediction() {
   if (predictions.length > 0) {
     predictions.forEach((prediction) => {
       const keypoints = prediction.scaledMesh;
+      const rightEyePoints = prediction.annotations.rightEyeUpper0;
       const leftEyePoints = prediction.annotations.leftEyeUpper0;
       const leftEyePoints2 = prediction.annotations.leftEyeUpper1;
       const leftEyePoints3 = prediction.annotations.leftEyeUpper2;
-      const xVals = leftEyePoints.map((pt) => pt[0]);
-      const yVals = leftEyePoints.map((pt) => pt[1]);
-      const zVals = leftEyePoints.map((pt) => pt[2]);
-      // const zVals = leftEyePoints.map(pt => pt[2]);
-      const min = Math.max(...xVals);
-      if (leftEyePoints.length > 0) {
-        const p1 = leftEyePoints.find((x) => x[0] === min);
-        if (!p1) return;
-        const avgX = getAvg(xVals);
-        const avgY = getAvg(yVals);
-        // const target = transform(p1[0], p1[1]); // when in upper left corner, x is -5.5 and y is 2.9
-        const target = transform(avgX, avgY);
-        // in lower right corner, x is 4.4, y is -2.6
-
-        leftUpEyelash?.position?.set(target.x - 0.13, target.y + 0.03, 0.1); // .15 mine, a vertical offset due to the dimensions of image itself // z fixed
-
-        // #region scale and rotation
-
-        // when facing straight on:
-        // z values - [7.2, 5.5, 4.1, 2.9, 2.7, 3.4, 4.4]
-
-        // when turned right
-        // z values - [-17.2, -17.3, -17.1, -15.4, -13.1, -10.4, -8.4]
-
-        // when turned left
-        // z values - [25.8, 23.6, 21.1, 18.0, 15.8, 14.7, 14.3]
-
-        // close up
-        // z values - [4.3, 2.6, 1.1, -0.2, -0.4, 0.5, 1.6]
-
-        // far away
-        // z values - [11.1, 9.5, 8.0, 6.8, 6.5, 7.1, 7.9]
-
-        // in x-y plane can get current angle of eyelash using first and last point.
-
-        const yfirst = yVals[0];
-        const ylast = yVals[yVals.length - 1];
-        const xfirst = xVals[0];
-        const xlast = xVals[xVals.length - 1];
-        const run = xfirst - xlast;
-        const rise = ylast - yfirst;
-        const zfirst = zVals[0];
-        const zlast = zVals[zVals.length - 1];
-        const deepRun = zlast - zfirst;
-        const slope = rise / run;
-        const zSlope = deepRun / run;
-        // tilted left, slope is -0.55
-        // straight on .004
-        // tilted right, slope is .55
-        //   const max = Math.min(...xVals);
-        /*         const eyewidth = Math.abs(max - min); */
-        //naive scale - just measures x axis width of bounding box
-        const firstPoint = leftEyePoints[0];
-        const lastPoint = leftEyePoints[leftEyePoints.length - 1];
-        //  console.log('firstPoint,', firstPoint, lastPoint)
-
-        const eyelashDist = distance3d(firstPoint, lastPoint);
-        const newScale = eyelashDist / EYELASH_PIXELS_PER_UNIT;
-        leftUpEyelash.scale.x = newScale;
-
-        // naive z-rotation - independent of scale
-        const newZRot = Math.atan(slope);
-        leftUpEyelash.rotation.z = -newZRot * 1.05 - 0.2;
-        const newYRot = Math.atan(zSlope);
-        leftUpEyelash.rotation.y = newYRot * 1.3;
-
-        populateOutput(newYRot);
-        // #endregion scale
-        // sets position in scene
-      }
-
+      placeEyelash(rightEyePoints, rightUpEyelash, .13, -.03, -1.05, 0.2, -1.3)
+      placeEyelash(leftEyePoints, leftUpEyelash, -.13, .03, 1.05, -0.2, 1.3)
+      populateOutput('something')
       // left bottom
       /*       const leftEyeLowerPoints = prediction.annotations.leftEyeLower0;
       if (leftEyeLowerPoints.length > 0) {
@@ -492,6 +479,29 @@ function addEyeLash() {
     }
   );
 }
+
+function addEyelashR() {
+  THREE.Cache.enabled = true;
+  const loader = new THREE.TextureLoader(); // load from file
+  loader.load(
+    "images/eyelash_r.png",
+    function (texture) {
+      const geometry = new THREE.PlaneGeometry(1.5, getEyelashPlaneHeight(1.5)); // width, height  1 unit of this eyelash is about 47 px
+      const meterial = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+      });
+      rightUpEyelash = new THREE.Mesh(geometry, meterial);
+      scene.add(rightUpEyelash);
+    },
+    undefined,
+    function (err) {
+      console.error("error while laoding", err);
+    }
+  );
+}
+
+
 /*
 function addEyeLashB() {
   // bottom eyelash
@@ -613,6 +623,7 @@ function testThreejs() {
   // addLine();
 
   addEyeLash();
+  addEyelashR();
   // addEyeLashB();
 }
 

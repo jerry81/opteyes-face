@@ -317,7 +317,7 @@ async function renderPrediction() {
         1,
         0.2,// z- offset
         1.3,
-        .75, // negative z mult
+        1, // negative z mult
         .8 // positive z multiplier
       );
       placeEyelash(

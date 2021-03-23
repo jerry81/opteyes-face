@@ -2,7 +2,7 @@
   <div class="container">
     <div class="flex padding">
       <div class="canvas-wrapper">
-        <video id="video" playsinline style="display:none" />
+        <video id="video" playsinline style="display: none" />
         <canvas id="output" />
       </div>
       <div class="flex-sub">
@@ -12,7 +12,14 @@
     <div id="scatter-gl-container" />
     <div
       id="coutput"
-      style="position: absolute; top: 0; left: 0;margin: 15px; width: 300px; overflow-wrap: break-word"
+      style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        margin: 15px;
+        width: 300px;
+        overflow-wrap: break-word;
+      "
     />
     <!-- <img
       id="leftEye"
@@ -24,8 +31,9 @@
 <script>
 // eslint-disable-next-line
 import * as THREE from "three";
-import dat from "dat.gui";
+// import dat from "dat.gui";
 import { ScatterGL } from "scatter-gl";
+import { showKeyPoints } from "@/utils/index";
 
 import * as tf from "@tensorflow/tfjs-core";
 import * as faceLandmarksDetection from "@tensorflow-models/face-landmarks-detection";
@@ -47,23 +55,22 @@ const BLUE = "#157AB3";
 const EYELASH_PIXELS_PER_UNIT = 47;
 const RIGHT_UPPER_MAP = [33, 246, 161, 160, 159, 158, 157, 173, 133];
 // const LEFT_UPPER_MAP2 = [463, 414, 286, 258, 257, 259, 260, 467, 359];
+// 78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308
+// 146, 91, 181, 84, 17, 314, 405, 321, 375, 291
 const LOWER_LIP_POINTS = [
-   61,
-  62,
   78,
-  95, 
+  95,
   88,
   178,
   87,
-  14, 
+  14,
   317,
   402,
   318,
   324,
   308,
-/*   290, */
   291,
-  375, 
+  375,
   321,
   405,
   314,
@@ -72,7 +79,32 @@ const LOWER_LIP_POINTS = [
   181,
   91,
   146,
-  61
+  78,
+];
+const UPPER_LIP_POINTS = [
+  78,
+  191,
+  80,
+  81,
+  82,
+  13,
+  312,
+  311,
+  310,
+  415,
+  308,
+  291,
+  409,
+  270,
+  269,
+  267,
+  0,
+  37,
+  39,
+  40,
+  185,
+  61,
+  78,
 ];
 
 let camera, renderer, scene;
@@ -84,7 +116,7 @@ function populateOutput(msg) {
   el.innerHTML = JSON.stringify(msg);
 }
 
-let lipLower;
+let lipLower, lipUpper;
 
 function isMobile() {
   const isAndroid = /Android/i.test(navigator.userAgent);
@@ -125,6 +157,7 @@ let model,
   canvas,
   scatterGLHasInitialized = false,
   scatterGL,
+  // eslint-disable-next-line
   rafID;
 
 const VIDEO_SIZE = 500;
@@ -138,41 +171,11 @@ const state = {
   maxFaces: 1,
   triangulateMesh: false,
   predictIrises: true,
-  showFullPoints: true
+  showFullPoints: true,
 };
 
 if (renderPointcloud) {
   state.renderPointcloud = true;
-}
-
-// eslint-disable-next-line
-function setupDatGui() {
-  const gui = new dat.GUI();
-  gui
-    .add(state, "backend", ["webgl", "wasm", "cpu"])
-    .onChange(async backend => {
-      window.cancelAnimationFrame(rafID);
-      await tf.setBackend(backend);
-      requestAnimationFrame(renderPrediction);
-    });
-
-  gui.add(state, "maxFaces", 1, 20, 1).onChange(async val => {
-    model = await faceLandmarksDetection.load(
-      faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-      { maxFaces: val }
-    );
-  });
-
-  gui.add(state, "triangulateMesh");
-  gui.add(state, "predictIrises");
-
-  if (renderPointcloud) {
-    gui.add(state, "renderPointcloud").onChange(render => {
-      document.querySelector("#scatter-gl-container").style.display = render
-        ? "inline-block"
-        : "none";
-    });
-  }
 }
 
 // eslint-disable-next-line
@@ -186,21 +189,17 @@ async function setupCamera() {
       // Only setting the video to a specified size in order to accommodate a
       // point cloud, so on mobile devices accept the default size.
       width: mobile ? undefined : VIDEO_SIZE,
-      height: mobile ? undefined : VIDEO_SIZE
-    }
+      height: mobile ? undefined : VIDEO_SIZE,
+    },
   });
   video.srcObject = stream;
 
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     video.onloadedmetadata = () => {
       resolve(video);
     };
   });
 }
-
-/* function toDegrees(rad) {
-  return rad * (180/Math.PI)
-} */
 
 function getAvg(arr) {
   const sum = arr.reduce((prev, cur) => {
@@ -216,7 +215,7 @@ async function renderPrediction() {
     input: video,
     returnTensors: false,
     flipHorizontal: false,
-    predictIrises: state.predictIrises
+    predictIrises: state.predictIrises,
   }); // array
 
   ctx.drawImage(
@@ -232,23 +231,18 @@ async function renderPrediction() {
   );
 
   if (predictions.length > 0) {
-    predictions.forEach(prediction => {
+    predictions.forEach((prediction) => {
       const keypoints = prediction.scaledMesh;
-      // const keypoints = prediction.annotations.leftEyeUpper1;
-      // console.log(keypoints);
-      // NUM_KEYPOINTS = keypoints.length;
-      // left up
-      // populateOutput(Object.keys(prediction.annotations));
       const leftEyePoints = prediction.annotations.leftEyeUpper0;
       const leftEyePoints2 = prediction.annotations.leftEyeUpper1;
       const leftEyePoints3 = prediction.annotations.leftEyeUpper2;
-      const xVals = leftEyePoints.map(pt => pt[0]);
-      const yVals = leftEyePoints.map(pt => pt[1]);
-      const zVals = leftEyePoints.map(pt => pt[2]);
+      const xVals = leftEyePoints.map((pt) => pt[0]);
+      const yVals = leftEyePoints.map((pt) => pt[1]);
+      const zVals = leftEyePoints.map((pt) => pt[2]);
       // const zVals = leftEyePoints.map(pt => pt[2]);
       const min = Math.max(...xVals);
       if (leftEyePoints.length > 0) {
-        const p1 = leftEyePoints.find(x => x[0] === min);
+        const p1 = leftEyePoints.find((x) => x[0] === min);
         if (!p1) return;
         const avgX = getAvg(xVals);
         const avgY = getAvg(yVals);
@@ -324,30 +318,25 @@ async function renderPrediction() {
         leftBottomEyeslash?.position?.set(target.x, target.y, 0.1);
       } */
 
-      // lip lower
-      /*       const lipLowerPoints = [
-        ...prediction.annotations.lipsLowerInner,
-        ...prediction.annotations.lipsLowerOuter
-      ]; */
       const lipLowerPoints = LOWER_LIP_POINTS.map(
-        idx => prediction.scaledMesh[idx]
+        (idx) => prediction.scaledMesh[idx]
       );
 
       if (lipLowerPoints.length > 0) {
-        const transformedLipLowerPoints = lipLowerPoints.map(x =>
+        const transformedLipLowerPoints = lipLowerPoints.map((x) =>
           transform(x[0], x[1])
         );
         addLipLower(transformedLipLowerPoints);
+      }
 
-        /*lipLower.position.set(
-          transformedLipLowerPoints[0].x,
-          transformedLipLowerPoints[0].y,
-          0.0001
-        ); */
-        /*          leftUpEyelash?.position?.set(          
-           transformedLipLowerPoints[0].x,
-           transformedLipLowerPoints[0].y,
-           0.0001) */
+      const lipUpperPoints = UPPER_LIP_POINTS.map(
+        (x) => prediction.scaledMesh[x]
+      );
+      if (lipUpperPoints.length > 0) {
+        const transformedLipUpperPoints = lipUpperPoints.map((x) =>
+          transform(x[0], x[1])
+        );
+        addLipUpper(transformedLipUpperPoints);
       }
 
       if (state.triangulateMesh) {
@@ -357,62 +346,30 @@ async function renderPrediction() {
           const points = [
             TRIANGULATION[i * 3],
             TRIANGULATION[i * 3 + 1],
-            TRIANGULATION[i * 3 + 2]
-          ].map(index => keypoints[index]);
+            TRIANGULATION[i * 3 + 2],
+          ].map((index) => keypoints[index]);
           drawPath(ctx, points, true);
         }
       } else {
         ctx.fillStyle = GREEN;
         if (state.showFullPoints) {
-          // for (let i = 0; i < NUM_KEYPOINTS; i++) {
-          //   const x = keypoints[i][0];
-          //   const y = keypoints[i][1];
-          //   ctx.beginPath();
-          //   ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
-          //   ctx.fill();
-          // }
+          // showKeyPoints(ctx, keypoints, "#FFF");
+          let leftUpper = RIGHT_UPPER_MAP.map((idx) => keypoints[idx]);
+          showKeyPoints(ctx, leftUpper);
 
-          /*           for (let i = 0; i < leftEyePoints.length; i++) {
-            const x = leftEyePoints[i][0];
-            const y = leftEyePoints[i][1];
-            ctx.beginPath();
-            ctx.arc(x, y, 1, 0, 2 * Math.PI);
-            ctx.fill();
-          } */
-          let leftUpper = RIGHT_UPPER_MAP.map(idx => keypoints[idx]);
-          for (let i = 0; i < leftUpper.length; i++) {
-            const x = leftUpper[i][0];
-            const y = leftUpper[i][1];
-            ctx.beginPath();
-            ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
-            ctx.fill();
-          }
-          ctx.fillStyle = RED;
-          let lowerLip = LOWER_LIP_POINTS.map(idx => keypoints[idx]);
-          for (let i = 0; i < lowerLip.length; i++) {
-            const x = lowerLip[i][0];
-            const y = lowerLip[i][1];
-            ctx.beginPath();
-            ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
-            ctx.fill();
-          }
-          for (let i = 0; i < leftEyePoints2.length; i++) {
-            const x = leftEyePoints2[i][0];
-            const y = leftEyePoints2[i][1];
-            ctx.beginPath();
-            ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
-            ctx.fill();
-          }
-          ctx.fillStyle = BLUE;
-          for (let i = 0; i < leftEyePoints3.length; i++) {
-            const x = leftEyePoints3[i][0];
-            const y = leftEyePoints3[i][1];
-            ctx.beginPath();
-            ctx.arc(x, y, 1 /* radius */, 0, 2 * Math.PI);
-            ctx.fill();
-          }
+          let lowerLip = LOWER_LIP_POINTS.map((idx) => keypoints[idx]);
+          showKeyPoints(ctx, lowerLip, RED);
+          showKeyPoints(
+            ctx,
+            UPPER_LIP_POINTS.map((x) => keypoints[x])
+          );
+
+          showKeyPoints(ctx, leftEyePoints2);
+
+          showKeyPoints(ctx, leftEyePoints3, BLUE);
         }
       }
+
       if (keypoints.length > NUM_KEYPOINTS) {
         ctx.strokeStyle = RED;
         ctx.lineWidth = 1;
@@ -461,9 +418,9 @@ async function renderPrediction() {
       }
     });
     if (renderPointcloud && state.renderPointcloud && scatterGL != null) {
-      const pointsData = predictions.map(prediction => {
+      const pointsData = predictions.map((prediction) => {
         let scaledMesh = prediction.scaledMesh;
-        return scaledMesh.map(point => [-point[0], -point[1], -point[2]]);
+        return scaledMesh.map((point) => [-point[0], -point[1], -point[2]]);
       });
       let flattenedPointsData = [];
       for (let i = 0; i < pointsData.length; i++) {
@@ -471,7 +428,7 @@ async function renderPrediction() {
       }
       const dataset = new ScatterGL.Dataset(flattenedPointsData);
       if (!scatterGLHasInitialized) {
-        scatterGL.setPointColorer(i => {
+        scatterGL.setPointColorer((i) => {
           if (i % (NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS * 2) > NUM_KEYPOINTS) {
             return RED;
           }
@@ -504,7 +461,7 @@ const transform = (a, b, w = 10, h = 10.0) => {
   // x becomes w * (500 - )  since width and height of rendering area is 1000
   return {
     x: (w * (500.0 - a)) / 500.0 - w / 2,
-    y: (h * (500 - b)) / 500.0 - h / 2
+    y: (h * (500 - b)) / 500.0 - h / 2,
   };
 };
 
@@ -518,24 +475,24 @@ function addEyeLash() {
   console.log("attempting to load");
   loader.load(
     "images/eyelashcropped.png",
-    function(texture) {
+    function (texture) {
       console.log("loaded");
 
       const geometry = new THREE.PlaneGeometry(1.5, getEyelashPlaneHeight(1.5)); // width, height  1 unit of this eyelash is about 47 px
       const meterial = new THREE.MeshBasicMaterial({
         map: texture,
-        transparent: true
+        transparent: true,
       });
       leftUpEyelash = new THREE.Mesh(geometry, meterial);
       scene.add(leftUpEyelash);
     },
     undefined,
-    function(err) {
+    function (err) {
       console.error("error while laoding", err);
     }
   );
 }
-/* 
+/*
 function addEyeLashB() {
   // bottom eyelash
   const loader = new THREE.TextureLoader();
@@ -570,11 +527,38 @@ function addLipLower(poly) {
   const material = new THREE.MeshBasicMaterial({
     color: 0x800000,
     transparent: true,
-    opacity: 0.75
+    opacity: 0.4,
   });
 
   lipLower = new THREE.Mesh(geometry, material);
   scene.add(lipLower);
+}
+
+function addLipUpper(poly) {
+  if (lipUpper != null) {
+    scene.remove(lipUpper);
+  }
+
+  if (!poly || poly.length === 0) return;
+
+  const shape = new THREE.Shape();
+  shape.moveTo(poly[0].x, poly[0].y);
+
+  for (let index = 0; index < poly.length; index++) {
+    const point = poly[index];
+    shape.lineTo(point.x, point.y);
+  }
+  shape.lineTo(poly[0].x, poly[0].y);
+
+  const geometry = new THREE.ShapeGeometry(shape);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x800000,
+    transparent: true,
+    opacity: 0.4,
+  });
+
+  lipUpper = new THREE.Mesh(geometry, material);
+  scene.add(lipUpper);
 }
 
 function testThreejs() {
@@ -614,7 +598,7 @@ function testThreejs() {
 
   renderer = new THREE.WebGLRenderer({
     antialias: true,
-    canvas: container
+    canvas: container,
     // alpha: true,
   });
   const RENDERER_SIZE = 750;
@@ -632,23 +616,6 @@ function testThreejs() {
   // addEyeLashB();
 }
 
-/* function addLine() {
-  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
-  const linePoints = [];
-  linePoints.push(new THREE.Vector3(-8, 5, 0));
-  linePoints.push(new THREE.Vector3(8, 5, 0));
-  linePoints.push(new THREE.Vector3(8, -5, 0));
-  linePoints.push(new THREE.Vector3(-8, -5, 0));
-  linePoints.push(new THREE.Vector3(-8, 5, 0));
-
-  const line = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(linePoints),
-    lineMaterial
-  );
-
-  scene.add(line);
-}
- */
 export default {
   async mounted() {
     await tf.setBackend(state.backend);
@@ -691,7 +658,7 @@ export default {
     //     { rotateOnStart: false, selectEnabled: false }
     //   );
     // }
-  }
+  },
 };
 </script>
 

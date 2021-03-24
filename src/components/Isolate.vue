@@ -3,11 +3,10 @@
     <div class="flex padding">
       <div class="canvas-wrapper">
         <video id="video" playsinline style="display: none" />
-        <canvas id="output" />
         <div class="tools"></div>
       </div>
       <div class="flex-sub">
-        <canvas ref="threeCanvas" id="three" />
+        <canvas id="three" />
       </div>
     </div>
     <div id="scatter-gl-container" />
@@ -62,10 +61,6 @@ export default {
 
     this.testThreejs();
 
-    this.canvas = document.getElementById("output");
-    this.canvas.width = this.videoWidth;
-    this.canvas.height = this.videoHeight;
-    const canvasContainer = document.querySelector(".canvas-wrapper");
     canvasContainer.style = `width: ${this.videoWidth}px; height: ${this.videoHeight}px`;
     this.ctx = this.canvas.getContext("2d");
     this.ctx.translate(this.canvas.width, 0); // move right the length of canvas
@@ -77,7 +72,10 @@ export default {
       faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
       { maxFaces: this.state.maxFaces, predictIrises: true }
     );
+
+    setTimeout(() => {
       this.renderPrediction();
+    }, 5000);
     // if (renderPointcloud) {
     //   document.querySelector(
     //     "#scatter-gl-container"
@@ -182,7 +180,7 @@ export default {
         showFullPoints: true
       },
       vtexture: null,
-      vgeometry: null,
+      vgeometry: null, 
       vmaterial: null, // video texture
       vmesh: null
     };
@@ -197,30 +195,6 @@ export default {
   },
   methods: {
     testThreejs() {
-      // this.webGlContainer = document.getElementById("three");
-      this.webGlContainer = this.$refs.threeCanvas;
-      console.log("webGlContainer is ", this.webGlContainer);
-      this.webGlContainer.style = `width: 750px; height: 750px`;
-      this.webGlContainer.width = 750;
-      this.webGlContainer.height = 750;
-
-      /*       let webglCtx =
-        container.getContext("webgl") ||
-        container.getContext("experimental-webgl");
-      console.log("ctx is ", webglCtx); */
-      this.renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        canvas: this.webGlContainer
-        // alpha: true,
-      });
-      // console.log("webGlCtx after", webglCtx);
-
-      const RENDERER_SIZE = 750;
-      // renderer.setClearColor(0xffffff);
-      // renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.setSize(RENDERER_SIZE, RENDERER_SIZE); // 1000 x 1000
-      // this.renderer.setClearColor(0xEEEEEE)
-      console.log("this.renderer", this.renderer);
       // loads 3js
       this.video = document.getElementById("video");
 
@@ -250,19 +224,36 @@ export default {
       // mesh.position.set(0, 0, 0);
       // mesh.lookAt(camera.position);
       this.scene.add(this.vmesh); // add mesh to scene
-      console.log("this. scene ", this.scene);
-      if (this.scene) {
-        console.log("rendering scene");
-        this.renderer.render(this.scene, this.camera);
-      }
+
+      this.webGlContainer = document.getElementById("three");
+
+      console.log("container is ", this.webGlContainer);
+      /*       let webglCtx =
+        container.getContext("webgl") ||
+        container.getContext("experimental-webgl");
+      console.log("ctx is ", webglCtx); */
+      this.renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+        canvas: this.webGlContainer
+        // alpha: true,
+      });
+      // console.log("webGlCtx after", webglCtx);
+
+      const RENDERER_SIZE = 750;
+      // renderer.setClearColor(0xffffff);
+      // renderer.setPixelRatio(window.devicePixelRatio);
+      this.renderer.setSize(RENDERER_SIZE, RENDERER_SIZE); // 1000 x 1000
+      this.renderer.setClearColor(0xEEEEEE)
+      console.log('this.renderer', this.renderer)
       // const light = new THREE.DirectionalLight(0xffffff, 0.5);
       // light.position.set(10, 0, 10);
       // scene.add(light);
 
       // addLine();
 
-       this.addEyeLash();
-       this.addEyelashR();
+      this.addEyeLash();
+      this.addEyelashR();
       // addEyeLashB();
     },
     addLipLower(poly) {
@@ -576,9 +567,6 @@ export default {
           this.stats.end();
           this.rafID = requestAnimationFrame(this.renderPrediction);
         } else {
-          if (this.scene) {
-            this.renderer.render(this.scene, this.camera);
-          }
           this.rafID = requestAnimationFrame(this.renderPrediction);
         }
       }

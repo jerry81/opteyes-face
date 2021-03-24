@@ -4,7 +4,29 @@
       <div class="canvas-wrapper">
         <video id="video" playsinline style="display: none" />
         <canvas id="output" />
-        <div class="tools"></div>
+        <div class="tools">
+          <label>Feature: </label>
+          <select v-model="selectedFeature">
+            <option>Left Eyelash</option>
+            <option>Right Eyelash</option>
+          </select>
+          <div v-if="selectedFeature === 'Left Eyelash'">
+            <label>Visible</label>
+            <input
+              style="margin-left: 5px;"
+              type="checkbox"
+              v-model="leftEyelashProps.visible"
+            />
+          </div>
+          <div v-if="selectedFeature === 'Right Eyelash'">
+            <label>Visible</label>
+            <input
+              style="margin-left: 5px;"
+              type="checkbox"
+              v-model="rightEyelashProps.visible"
+            />
+          </div>
+        </div>
       </div>
       <div class="flex-sub">
         <canvas ref="threeCanvas" id="three" />
@@ -77,7 +99,7 @@ export default {
       faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
       { maxFaces: this.state.maxFaces, predictIrises: true }
     );
-      this.renderPrediction();
+    this.renderPrediction();
     // if (renderPointcloud) {
     //   document.querySelector(
     //     "#scatter-gl-container"
@@ -90,6 +112,13 @@ export default {
   },
   data() {
     return {
+      selectedFeature: "Left Eyelash",
+      leftEyelashProps: {
+        visible: true
+      },
+      rightEyelashProps: {
+        visible: true
+      },
       NUM_KEYPOINTS: 468,
       NUM_IRIS_KEYPOINTS: 5,
       GREEN: "#32EEDB",
@@ -261,8 +290,8 @@ export default {
 
       // addLine();
 
-       this.addEyeLash();
-       this.addEyelashR();
+      this.addEyeLash();
+      this.addEyelashR();
       // addEyeLashB();
     },
     addLipLower(poly) {
@@ -435,6 +464,8 @@ export default {
           );
           // left bottom
 
+          this.leftUpEyelash.visible = this.leftEyelashProps.visible;
+          this.rightUpEyelash.visible = this.rightEyelashProps.visible;
           const lipLowerPoints = this.LOWER_LIP_POINTS.map(
             idx => prediction.scaledMesh[idx]
           );

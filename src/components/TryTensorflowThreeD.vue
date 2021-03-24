@@ -636,37 +636,35 @@ function addLipUpper(poly) {
 }
  */ export default {
   async mounted() {
-    await tf.setBackend(state.backend);
+    await tf.setBackend(this.state.backend);
     // setupDatGui();
     // stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
     // document.getElementById("app").appendChild(stats.dom);
-    await setupCamera();
-    video.play();
-    videoWidth = video.videoWidth;
-    videoHeight = video.videoHeight;
-    video.width = videoWidth;
-    video.height = videoHeight;
+    await this.setupCamera();
+    this.video.play();
+    this.videoWidth = this.video.videoWidth;
+    this.videoHeight = this.video.videoHeight;
+    this.video.width = this.videoWidth;
+    this.video.height = this.videoHeight;
 
-    console.log("videoWidth", videoWidth);
-    console.log("videoHeight", videoHeight);
-    testThreejs();
+    this.testThreejs();
 
-    canvas = document.getElementById("output");
-    canvas.width = videoWidth;
-    canvas.height = videoHeight;
+    this.canvas = document.getElementById("output");
+    this.canvas.width = this.videoWidth;
+    this.canvas.height = this.videoHeight;
     const canvasContainer = document.querySelector(".canvas-wrapper");
-    canvasContainer.style = `width: ${videoWidth}px; height: ${videoHeight}px`;
-    ctx = canvas.getContext("2d");
-    ctx.translate(canvas.width, 0); // move right the length of canvas
-    ctx.scale(-1, 1); // flip x
-    ctx.fillStyle = GREEN;
-    ctx.strokeStyle = GREEN;
-    ctx.lineWidth = 0.5;
-    model = await faceLandmarksDetection.load(
+    canvasContainer.style = `width: ${this.videoWidth}px; height: ${this.videoHeight}px`;
+    this.ctx = this.canvas.getContext("2d");
+    this.ctx.translate(this.canvas.width, 0); // move right the length of canvas
+    this.ctx.scale(-1, 1); // flip x
+    this.ctx.fillStyle = this.GREEN;
+    this.ctx.strokeStyle = this.GREEN;
+    this.ctx.lineWidth = 0.5;
+    this.model = await faceLandmarksDetection.load(
       faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-      { maxFaces: state.maxFaces, predictIrises: true }
+      { maxFaces: this.state.maxFaces, predictIrises: true }
     );
-    renderPrediction();
+    this.renderPrediction();
     // if (renderPointcloud) {
     //   document.querySelector(
     //     "#scatter-gl-container"
@@ -760,7 +758,7 @@ function addLipUpper(poly) {
       mobile: this.isMobile(),
       // Don't render the point cloud on mobile in order to maximize performance and
       // to avoid crowding limited screen space.
-      renderPointcloud: mobile === false,
+      renderPointcloud: this.mobile === false,
       stats: new Stats(),
       state: {
         backend: "webgl",
@@ -773,7 +771,7 @@ function addLipUpper(poly) {
   },
   computed: {},
   watch: {
-    renderPointCloud(n, o) {
+    renderPointCloud(n) {
       if (n) {
         this.state.renderPointcloud = true;
       }
@@ -798,7 +796,7 @@ function addLipUpper(poly) {
       // const axesHelper = new THREE.AxesHelper(90);
       // scene.add(axesHelper);
 
-      const texture = new THREE.VideoTexture(video); // like basic texture but continuously sets needsUpdate to true
+      const texture = new THREE.VideoTexture(this.video); // like basic texture but continuously sets needsUpdate to true
       texture.wrapS = THREE.RepeatWrapping; // wrapping mode - repeats to infinity
       texture.repeat.x = -1; // repeats in r to l direction
 
@@ -829,8 +827,8 @@ function addLipUpper(poly) {
 
       // addLine();
 
-      addEyeLash();
-      addEyelashR();
+      this.addEyeLash();
+      this.addEyelashR();
       // addEyeLashB();
     },
     addLipLower(poly) {
@@ -856,8 +854,8 @@ function addLipUpper(poly) {
         opacity: 0.4
       });
 
-      lipLower = new THREE.Mesh(geometry, material);
-      this.scene.add(lipLower);
+      this.lipLower = new THREE.Mesh(geometry, material);
+      this.scene.add(this.lipLower);
     },
 
     addLipUpper(poly) {
@@ -884,7 +882,7 @@ function addLipUpper(poly) {
       });
 
       this.lipUpper = new THREE.Mesh(geometry, material);
-      this.scene.add(lipUpper);
+      this.scene.add(this.lipUpper);
     },
 
     // a is x coordinate of point to transform
@@ -908,7 +906,7 @@ function addLipUpper(poly) {
       console.log("attempting to load");
       loader.load(
         "images/eyelashcropped.png",
-        function(texture) {
+        (texture) => {
           const geometry = new THREE.PlaneGeometry(
             1.5,
             this.getEyelashPlaneHeight(1.5)
@@ -932,7 +930,7 @@ function addLipUpper(poly) {
       const loader = new THREE.TextureLoader(); // load from file
       loader.load(
         "images/eyelash_r.png",
-        function(texture) {
+        (texture) => {
           const geometry = new THREE.PlaneGeometry(
             1.5,
             this.getEyelashPlaneHeight(1.5)
@@ -941,8 +939,8 @@ function addLipUpper(poly) {
             map: texture,
             transparent: true
           });
-          rightUpEyelash = new THREE.Mesh(geometry, meterial);
-          scene.add(rightUpEyelash);
+          this.rightUpEyelash = new THREE.Mesh(geometry, meterial);
+          this.scene.add(this.rightUpEyelash);
         },
         undefined,
         function(err) {
@@ -954,7 +952,7 @@ function addLipUpper(poly) {
       this.stats.begin();
 
       const predictions = await this.model.estimateFaces({
-        input: video,
+        input: this.video,
         returnTensors: false,
         flipHorizontal: false,
         predictIrises: this.state.predictIrises
@@ -1025,7 +1023,7 @@ function addLipUpper(poly) {
           }
 
           if (this.state.triangulateMesh) {
-            this.ctx.strokeStyle = GREEN;
+            this.ctx.strokeStyle = this.GREEN;
             this.ctx.lineWidth = 0.5;
             for (let i = 0; i < TRIANGULATION.length / 3; i++) {
               const points = [
@@ -1037,21 +1035,21 @@ function addLipUpper(poly) {
             }
           } else {
             this.ctx.fillStyle = this.GREEN;
-            if (state.showFullPoints) {
+            if (this.state.showFullPoints) {
               // showKeyPoints(ctx, keypoints, "#FFF");
-              let leftUpper = RIGHT_UPPER_MAP.map(idx => keypoints[idx]);
-              this.showKeyPoints(this.ctx, this.leftUpper);
+              let leftUpper = this.RIGHT_UPPER_MAP.map(idx => keypoints[idx]);
+              showKeyPoints(this.ctx, leftUpper);
 
               let lowerLip = this.LOWER_LIP_POINTS.map(idx => keypoints[idx]);
-              this.showKeyPoints(this.ctx, this.lowerLip, this.RED);
-              this.showKeyPoints(
+              showKeyPoints(this.ctx, lowerLip, this.RED);
+              showKeyPoints(
                 this.ctx,
                 this.UPPER_LIP_POINTS.map(x => keypoints[x])
               );
 
-              this.showKeyPoints(this.ctx, leftEyePoints2);
+              showKeyPoints(this.ctx, leftEyePoints2);
 
-              this.showKeyPoints(this.ctx, leftEyePoints3, this.BLUE);
+              showKeyPoints(this.ctx, leftEyePoints3, this.BLUE);
             }
           }
 

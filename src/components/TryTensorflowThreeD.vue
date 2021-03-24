@@ -46,595 +46,8 @@ import { TRIANGULATION } from "@/utils/triangulation";
 import * as tfjsWasm from "@tensorflow/tfjs-backend-wasm";
 tfjsWasm.setWasmPaths(
   `https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@${tfjsWasm.version_wasm}/dist/`
-); /* 
-function testThreejs() {
-  // loads 3js
-  video = document.getElementById("video");
-
-  camera = new THREE.PerspectiveCamera( // field of view, 75 degrees, aspect ratio, near, far points
-    53, // full fov from top to bottom
-    1,
-    0.1,
-    100
-  );
-  // camera.position.z = 10;
-  camera.position.set(0, 0, 10); // z = 10
-
-  scene = new THREE.Scene();
-
-  // const axesHelper = new THREE.AxesHelper(90);
-  // scene.add(axesHelper);
-
-  const texture = new THREE.VideoTexture(video); // like basic texture but continuously sets needsUpdate to true
-  texture.wrapS = THREE.RepeatWrapping; // wrapping mode - repeats to infinity
-  texture.repeat.x = -1; // repeats in r to l direction
-
-  const geometry = new THREE.PlaneGeometry(10, 10); // geometry, 16 x 10 width, height - why must we change dimensions from 1 x 1 to 16 x 10?
-  // geometry.scale(0.8, 0.8, 0.8);
-  const material = new THREE.MeshBasicMaterial({ map: texture }); // video texture
-
-  const mesh = new THREE.Mesh(geometry, material);
-  // mesh.position.set(0, 0, 0);
-  // mesh.lookAt(camera.position);
-  scene.add(mesh); // add mesh to scene
-
-  const container = document.getElementById("three");
-
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    canvas: container
-    // alpha: true,
-  });
-  const RENDERER_SIZE = 750;
-  // renderer.setClearColor(0xffffff);
-  // renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(RENDERER_SIZE, RENDERER_SIZE); // 1000 x 1000
-
-  // const light = new THREE.DirectionalLight(0xffffff, 0.5);
-  // light.position.set(10, 0, 10);
-  // scene.add(light);
-
-  // addLine();
-
-  addEyeLash();
-  addEyelashR();
-  // addEyeLashB();
-} */
-
-/* const NUM_KEYPOINTS = 468;
-const NUM_IRIS_KEYPOINTS = 5;
-const GREEN = "#32EEDB";
-const RED = "#FF2C35";
-const BLUE = "#157AB3";
-const EYELASH_PIXELS_PER_UNIT = 47;
-const RIGHT_UPPER_MAP = [33, 246, 161, 160, 159, 158, 157, 173, 133];
-// const LEFT_UPPER_MAP2 = [463, 414, 286, 258, 257, 259, 260, 467, 359];
-// 78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308
-// 146, 91, 181, 84, 17, 314, 405, 321, 375, 291
-const LOWER_LIP_POINTS = [
-  78,
-  95,
-  88,
-  178,
-  87,
-  14,
-  317,
-  402,
-  318,
-  324,
-  308,
-  291,
-  375,
-  321,
-  405,
-  314,
-  17,
-  84,
-  181,
-  91,
-  146,
-  78
-];
-const UPPER_LIP_POINTS = [
-  78,
-  191,
-  80,
-  81,
-  82,
-  13,
-  312,
-  311,
-  310,
-  415,
-  308,
-  291,
-  409,
-  270,
-  269,
-  267,
-  0,
-  37,
-  39,
-  40,
-  185,
-  61,
-  78
-]; */
-
-/* let camera, renderer, scene;
-let leftUpEyelash, rightUpEyelash; */
-// leftBottomEyeslash;
-
-/* let lipLower, lipUpper; */
-
-/* function populateOutput(msg) {
-  const el = document.getElementById("coutput");
-  el.innerHTML = JSON.stringify(msg);
-}
-
-function isMobile() {
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  return isAndroid || isiOS;
-}
-
-function distance(a, b) {
-  return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
-}
-
-function distance3d(a, b) {
-  return Math.sqrt(
-    Math.pow(a[0] - b[0], 2) +
-      Math.pow(a[1] - b[1], 2) +
-      Math.pow(a[2] - b[2], 2)
-  );
-} */
-
-/* function drawPath(ctx, points, closePath) {
-  const region = new Path2D();
-  region.moveTo(points[0][0], points[0][1]);
-  for (let i = 1; i < points.length; i++) {
-    const point = points[i];
-    region.lineTo(point[0], point[1]);
-  }
-
-  if (closePath) {
-    region.closePath();
-  }
-  ctx.stroke(region);
-} */
-/*
-function placeEyelash(
-  points,
-  object,
-  xOffset,
-  yOffset,
-  zRotMultiplier,
-  zRotOffset,
-  yRotMultiplier,
-  zRotNegativeOffset,
-  zRotPositiveOffset
-) {
-  const xVals = points.map(pt => pt[0]);
-  const yVals = points.map(pt => pt[1]);
-  const zVals = points.map(pt => pt[2]);
-  const min = Math.max(...xVals);
-  if (points.length > 0) {
-    const p1 = points.find(x => x[0] === min);
-    if (!p1) return;
-
-    const avgX = getAvg(xVals);
-    const avgY = getAvg(yVals);
-    const target = transform(avgX, avgY);
-    object?.position?.set(target.x + xOffset, target.y + yOffset, 0.1);
-
-
-    const yfirst = yVals[0];
-    const ylast = yVals[yVals.length - 1];
-    const xfirst = xVals[0];
-    const xlast = xVals[xVals.length - 1];
-    const run = xfirst - xlast;
-    const rise = ylast - yfirst;
-    const zfirst = zVals[0];
-    const zlast = zVals[zVals.length - 1];
-    const deepRun = zlast - zfirst;
-    const slope = rise / run;
-    const zSlope = deepRun / run;
-    const firstPoint = points[0];
-    const lastPoint = points[points.length - 1];
-
-    const eyelashDist = distance3d(firstPoint, lastPoint);
-    const newScale = eyelashDist / EYELASH_PIXELS_PER_UNIT;
-    object.scale.x = newScale;
-
-    const newZRot = Math.atan(slope);
-    const zAbs = Math.abs(newZRot);
-    const zOffMultiplier =
-      zAbs < 0.1
-        ? zRotMultiplier
-        : newZRot > 0
-        ? zRotPositiveOffset
-        : zRotNegativeOffset;
-    populateOutput(zOffMultiplier);
-    object.rotation.z = -newZRot * zOffMultiplier + zRotOffset;
-    const newYRot = Math.atan(zSlope);
-    object.rotation.y = newYRot * yRotMultiplier;
-  }
-} */
-
-/* let model,
-  ctx,
-  videoWidth,
-  videoHeight,
-  video,
-  canvas,
-  scatterGLHasInitialized = false,
-  scatterGL,
-  // eslint-disable-next-line
-  rafID;
-
-const VIDEO_SIZE = 500;
-const mobile = isMobile();
-// Don't render the point cloud on mobile in order to maximize performance and
-// to avoid crowding limited screen space.
-const renderPointcloud = mobile === false;
-const stats = new Stats();
-const state = {
-  backend: "webgl",
-  maxFaces: 1,
-  triangulateMesh: false,
-  predictIrises: true,
-  showFullPoints: true
-}; */
-
-// eslint-disable-next-line
-/* async function setupCamera() {
-  video = document.getElementById("video");
-
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: {
-      facingMode: "user",
-      // Only setting the video to a specified size in order to accommodate a
-      // point cloud, so on mobile devices accept the default size.
-      width: mobile ? undefined : VIDEO_SIZE,
-      height: mobile ? undefined : VIDEO_SIZE
-    }
-  });
-  video.srcObject = stream;
-
-  return new Promise(resolve => {
-    video.onloadedmetadata = () => {
-      resolve(video);
-    };
-  });
-}
-
-function getAvg(arr) {
-  const sum = arr.reduce((prev, cur) => {
-    return prev + cur;
-  });
-  return sum / arr.length;
-} */
-
-/* async function renderPrediction() {
-  stats.begin();
-
-  const predictions = await model.estimateFaces({
-    input: video,
-    returnTensors: false,
-    flipHorizontal: false,
-    predictIrises: state.predictIrises
-  }); // array
-
-  ctx.drawImage(
-    video,
-    0,
-    0,
-    videoWidth,
-    videoHeight,
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-  if (predictions.length > 0) {
-    predictions.forEach(prediction => {
-      const keypoints = prediction.scaledMesh;
-      const rightEyePoints = prediction.annotations.rightEyeUpper0;
-      const leftEyePoints = prediction.annotations.leftEyeUpper0;
-      const leftEyePoints2 = prediction.annotations.leftEyeUpper1;
-      const leftEyePoints3 = prediction.annotations.leftEyeUpper2;
-      placeEyelash(
-        rightEyePoints,
-        rightUpEyelash,
-        0.13,
-        0.025,
-        1,
-        0.2, // z- offset
-        1.3,
-        1, // negative z mult
-        0.8 // positive z multiplier
-      );
-      placeEyelash(
-        leftEyePoints,
-        leftUpEyelash,
-        -0.13,
-        0.025,
-        1,
-        -0.15,
-        1.3,
-        0.65,
-        1.2
-      );
-      // left bottom
-
-      const lipLowerPoints = LOWER_LIP_POINTS.map(
-        idx => prediction.scaledMesh[idx]
-      );
-
-      if (lipLowerPoints.length > 0) {
-        const transformedLipLowerPoints = lipLowerPoints.map(x =>
-          transform(x[0], x[1])
-        );
-        addLipLower(transformedLipLowerPoints);
-      }
-
-      const lipUpperPoints = UPPER_LIP_POINTS.map(
-        x => prediction.scaledMesh[x]
-      );
-      if (lipUpperPoints.length > 0) {
-        const transformedLipUpperPoints = lipUpperPoints.map(x =>
-          transform(x[0], x[1])
-        );
-        addLipUpper(transformedLipUpperPoints);
-      }
-
-      if (state.triangulateMesh) {
-        ctx.strokeStyle = GREEN;
-        ctx.lineWidth = 0.5;
-        for (let i = 0; i < TRIANGULATION.length / 3; i++) {
-          const points = [
-            TRIANGULATION[i * 3],
-            TRIANGULATION[i * 3 + 1],
-            TRIANGULATION[i * 3 + 2]
-          ].map(index => keypoints[index]);
-          drawPath(ctx, points, true);
-        }
-      } else {
-        ctx.fillStyle = GREEN;
-        if (state.showFullPoints) {
-          // showKeyPoints(ctx, keypoints, "#FFF");
-          let leftUpper = RIGHT_UPPER_MAP.map(idx => keypoints[idx]);
-          showKeyPoints(ctx, leftUpper);
-
-          let lowerLip = LOWER_LIP_POINTS.map(idx => keypoints[idx]);
-          showKeyPoints(ctx, lowerLip, RED);
-          showKeyPoints(
-            ctx,
-            UPPER_LIP_POINTS.map(x => keypoints[x])
-          );
-
-          showKeyPoints(ctx, leftEyePoints2);
-
-          showKeyPoints(ctx, leftEyePoints3, BLUE);
-        }
-      }
-
-      if (keypoints.length > NUM_KEYPOINTS) {
-        ctx.strokeStyle = RED;
-        ctx.lineWidth = 1;
-        const leftCenter = keypoints[NUM_KEYPOINTS];
-        const leftDiameterY = distance(
-          keypoints[NUM_KEYPOINTS + 4],
-          keypoints[NUM_KEYPOINTS + 2]
-        );
-        const leftDiameterX = distance(
-          keypoints[NUM_KEYPOINTS + 3],
-          keypoints[NUM_KEYPOINTS + 1]
-        );
-        ctx.beginPath();
-        ctx.ellipse(
-          leftCenter[0],
-          leftCenter[1],
-          leftDiameterX / 2,
-          leftDiameterY / 2,
-          0,
-          0,
-          2 * Math.PI
-        );
-        //   ctx.stroke();
-        if (keypoints.length > NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS) {
-          const rightCenter = keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS];
-          const rightDiameterY = distance(
-            keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS + 2],
-            keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS + 4]
-          );
-          const rightDiameterX = distance(
-            keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS + 3],
-            keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS + 1]
-          );
-          ctx.beginPath();
-          ctx.ellipse(
-            rightCenter[0],
-            rightCenter[1],
-            rightDiameterX / 2,
-            rightDiameterY / 2,
-            0,
-            0,
-            2 * Math.PI
-          );
-          //  ctx.stroke();
-        }
-      }
-    });
-    if (renderPointcloud && state.renderPointcloud && scatterGL != null) {
-      const pointsData = predictions.map(prediction => {
-        let scaledMesh = prediction.scaledMesh;
-        return scaledMesh.map(point => [-point[0], -point[1], -point[2]]);
-      });
-      let flattenedPointsData = [];
-      for (let i = 0; i < pointsData.length; i++) {
-        flattenedPointsData = flattenedPointsData.concat(pointsData[i]);
-      }
-      const dataset = new ScatterGL.Dataset(flattenedPointsData);
-      if (!scatterGLHasInitialized) {
-        scatterGL.setPointColorer(i => {
-          if (i % (NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS * 2) > NUM_KEYPOINTS) {
-            return RED;
-          }
-          return BLUE;
-        });
-        scatterGL.render(dataset);
-      } else {
-        scatterGL.updateDataset(dataset);
-      }
-      scatterGLHasInitialized = true;
-    }
-  } */
-
-// try to add image
-
-/*   if (scene) {
-    renderer.render(scene, camera);
-  }
-
-  // leftUpEyelash.position.set()
-
-  stats.end();
-  rafID = requestAnimationFrame(renderPrediction);
-} */
-
-/* // a is x coordinate of point to transform
-// b is y coord of point to translate
-// w and h not passed in .  they currently match the dimensions of the plane geometry mesh
-const transform = (a, b, w = 10, h = 10.0) => {
-  // x becomes w * (500 - )  since width and height of rendering area is 1000
-  return {
-    x: (w * (500.0 - a)) / 500.0 - w / 2,
-    y: (h * (500 - b)) / 500.0 - h / 2
-  };
-};
-
-function getEyelashPlaneHeight(width) {
-  return width * (200 / 476);
-}
-
-function addEyeLash() {
-  THREE.Cache.enabled = true;
-  const loader = new THREE.TextureLoader(); // load from file
-  console.log("attempting to load");
-  loader.load(
-    "images/eyelashcropped.png",
-    function(texture) {
-      console.log("loaded");
-
-      const geometry = new THREE.PlaneGeometry(1.5, getEyelashPlaneHeight(1.5)); // width, height  1 unit of this eyelash is about 47 px
-      const meterial = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true
-      });
-      leftUpEyelash = new THREE.Mesh(geometry, meterial);
-      scene.add(leftUpEyelash);
-    },
-    undefined,
-    function(err) {
-      console.error("error while laoding", err);
-    }
-  );
-}
-
-function addEyelashR() {
-  THREE.Cache.enabled = true;
-  const loader = new THREE.TextureLoader(); // load from file
-  loader.load(
-    "images/eyelash_r.png",
-    function(texture) {
-      const geometry = new THREE.PlaneGeometry(1.5, getEyelashPlaneHeight(1.5)); // width, height  1 unit of this eyelash is about 47 px
-      const meterial = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true
-      });
-      rightUpEyelash = new THREE.Mesh(geometry, meterial);
-      scene.add(rightUpEyelash);
-    },
-    undefined,
-    function(err) {
-      console.error("error while laoding", err);
-    }
-  );
-} */
-
-/*
-function addEyeLashB() {
-  // bottom eyelash
-  const loader = new THREE.TextureLoader();
-  loader.load("images/eyelash_b.png", function(texture) {
-    const geometry = new THREE.PlaneGeometry(3, 2);
-    const meterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true
-    });
-    leftBottomEyeslash = new THREE.Mesh(geometry, meterial);
-    scene.add(leftBottomEyeslash);
-  });
-} */
-/* 
-function addLipLower(poly) {
-  if (lipLower != null) {
-    scene.remove(lipLower);
-  }
-
-  if (!poly || poly.length === 0) return;
-
-  const shape = new THREE.Shape();
-  shape.moveTo(poly[0].x, poly[0].y);
-
-  for (let index = 0; index < poly.length; index++) {
-    const point = poly[index];
-    shape.lineTo(point.x, point.y);
-  }
-  shape.lineTo(poly[0].x, poly[0].y);
-
-  const geometry = new THREE.ShapeGeometry(shape);
-  const material = new THREE.MeshBasicMaterial({
-    color: 0x800000,
-    transparent: true,
-    opacity: 0.4
-  });
-
-  lipLower = new THREE.Mesh(geometry, material);
-  scene.add(lipLower);
-}
-
-function addLipUpper(poly) {
-  if (lipUpper != null) {
-    scene.remove(lipUpper);
-  }
-
-  if (!poly || poly.length === 0) return;
-
-  const shape = new THREE.Shape();
-  shape.moveTo(poly[0].x, poly[0].y);
-
-  for (let index = 0; index < poly.length; index++) {
-    const point = poly[index];
-    shape.lineTo(point.x, point.y);
-  }
-  shape.lineTo(poly[0].x, poly[0].y);
-
-  const geometry = new THREE.ShapeGeometry(shape);
-  const material = new THREE.MeshBasicMaterial({
-    color: 0x800000,
-    transparent: true,
-    opacity: 0.4
-  });
-
-  lipUpper = new THREE.Mesh(geometry, material);
-  scene.add(lipUpper);
-}
- */ export default {
+);
+export default {
   async mounted() {
     await tf.setBackend(this.state.backend);
     // setupDatGui();
@@ -664,7 +77,10 @@ function addLipUpper(poly) {
       faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
       { maxFaces: this.state.maxFaces, predictIrises: true }
     );
-    this.renderPrediction();
+
+    setTimeout(() => {
+      this.renderPrediction();
+    }, 5000);
     // if (renderPointcloud) {
     //   document.querySelector(
     //     "#scatter-gl-container"
@@ -736,6 +152,7 @@ function addLipUpper(poly) {
         61,
         78
       ],
+      webGlContainer: null,
       camera: null,
       renderer: null,
       scene: null,
@@ -809,13 +226,20 @@ function addLipUpper(poly) {
       // mesh.lookAt(camera.position);
       this.scene.add(mesh); // add mesh to scene
 
-      const container = document.getElementById("three");
+      this.webGlContainer = document.getElementById("three");
 
+      console.log("container is ",  this.webGlContainer);
+/*       let webglCtx =
+        container.getContext("webgl") ||
+        container.getContext("experimental-webgl");
+      console.log("ctx is ", webglCtx); */
       this.renderer = new THREE.WebGLRenderer({
         antialias: true,
-        canvas: container
+        canvas:  this.webGlContainer
         // alpha: true,
       });
+     // console.log("webGlCtx after", webglCtx);
+
       const RENDERER_SIZE = 750;
       // renderer.setClearColor(0xffffff);
       // renderer.setPixelRatio(window.devicePixelRatio);
@@ -906,7 +330,7 @@ function addLipUpper(poly) {
       console.log("attempting to load");
       loader.load(
         "images/eyelashcropped.png",
-        (texture) => {
+        texture => {
           const geometry = new THREE.PlaneGeometry(
             1.5,
             this.getEyelashPlaneHeight(1.5)
@@ -930,7 +354,7 @@ function addLipUpper(poly) {
       const loader = new THREE.TextureLoader(); // load from file
       loader.load(
         "images/eyelash_r.png",
-        (texture) => {
+        texture => {
           const geometry = new THREE.PlaneGeometry(
             1.5,
             this.getEyelashPlaneHeight(1.5)
@@ -1141,18 +565,20 @@ function addLipUpper(poly) {
 
           this.stats.end();
           this.rafID = requestAnimationFrame(this.renderPrediction);
+        } else {
+          this.rafID = requestAnimationFrame(this.renderPrediction);
         }
       }
     },
     async setupCamera() {
       this.video = document.getElementById("video");
-
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: {
           facingMode: "user",
           // Only setting the video to a specified size in order to accommodate a
           // point cloud, so on mobile devices accept the default size.
+
           width: this.mobile ? undefined : this.VIDEO_SIZE,
           height: this.mobile ? undefined : this.VIDEO_SIZE
         }
